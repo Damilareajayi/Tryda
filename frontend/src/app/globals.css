@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; }
+  
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #1F2D40; border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: #2D3F55; }
+
+  ::selection { background: rgba(0, 212, 180, 0.2); }
+}
+
+@layer components {
+  .card {
+    @apply bg-surface border border-surface-border rounded-xl p-5 shadow-card;
+  }
+
+  .stat-card {
+    @apply card flex flex-col gap-1 hover:border-teal/30 transition-colors duration-200;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border;
+  }
+
+  .btn-primary {
+    @apply bg-teal text-navy-900 font-semibold px-4 py-2 rounded-lg 
+           hover:bg-teal-dim transition-colors duration-150 
+           disabled:opacity-40 disabled:cursor-not-allowed text-sm;
+  }
+
+  .btn-ghost {
+    @apply text-gray-400 hover:text-gray-100 hover:bg-surface-hover 
+           px-3 py-2 rounded-lg transition-colors duration-150 text-sm;
+  }
+
+  .nav-link {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
+           text-gray-400 hover:text-gray-100 hover:bg-surface-hover
+           transition-colors duration-150 cursor-pointer;
+  }
+
+  .nav-link.active {
+    @apply text-teal bg-teal-glow;
+  }
+
+  .section-label {
+    @apply text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3;
+  }
+}
+
+/* Health ring animation */
+@keyframes ring-fill {
+  from { stroke-dashoffset: 339.3; }
+  to { stroke-dashoffset: var(--target-offset); }
+}
+
+.health-ring-progress {
+  animation: ring-fill 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Glow pulse for critical state */
+@keyframes critical-pulse {
+  0%, 100% { filter: drop-shadow(0 0 8px rgba(239,68,68,0.4)); }
+  50% { filter: drop-shadow(0 0 16px rgba(239,68,68,0.7)); }
+}
+
+.ring-critical { animation: critical-pulse 2s ease-in-out infinite; }
+
+/* Subtle teal glow for healthy */
+@keyframes healthy-glow {
+  0%, 100% { filter: drop-shadow(0 0 6px rgba(0,212,180,0.3)); }
+  50% { filter: drop-shadow(0 0 12px rgba(0,212,180,0.5)); }
+}
+
+.ring-healthy { animation: healthy-glow 3s ease-in-out infinite; }

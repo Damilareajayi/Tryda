@@ -1,0 +1,39 @@
+<svg viewBox="0 0 420 120" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="hTop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4ECDC4"/>
+      <stop offset="100%" stop-color="#1A7A8A"/>
+    </linearGradient>
+    <linearGradient id="hBody" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0%" stop-color="#2AAFBD"/>
+      <stop offset="100%" stop-color="#0F4F6A"/>
+    </linearGradient>
+    <linearGradient id="hWord" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1A5F7A"/>
+      <stop offset="100%" stop-color="#2AAFBD"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Gem at left, vertically centered -->
+  <polygon points="60,10 90,32 30,32" fill="url(#hTop)"/>
+  <polygon points="30,32 60,10 45,32" fill="#1A7A8A" opacity="0.85"/>
+  <polygon points="60,10 90,32 75,32" fill="#4ECDC4" opacity="0.75"/>
+  <polygon points="27,37 93,37 60,105" fill="url(#hBody)"/>
+  <polygon points="27,37 60,105 44,37" fill="#145374" opacity="0.85"/>
+  <polygon points="93,37 60,105 76,37" fill="#3DBDBD" opacity="0.6"/>
+  <line x1="60" y1="37" x2="60" y2="105" stroke="#0F4F6A" stroke-width="0.8" opacity="0.35"/>
+  <!-- TT mark -->
+  <rect x="42" y="15" width="36" height="6" rx="1.5" fill="white" opacity="0.95"/>
+  <rect x="49" y="15" width="7" height="17" rx="1" fill="white" opacity="0.95"/>
+  <rect x="62" y="15" width="7" height="17" rx="1" fill="white" opacity="0.95"/>
+
+  <!-- Vertical divider -->
+  <line x1="118" y1="22" x2="118" y2="98" stroke="#C8E6EA" stroke-width="1.5"/>
+
+  <!-- Tryda wordmark -->
+  <text x="140" y="82"
+    font-family="'Trebuchet MS', 'Gill Sans MT', 'Century Gothic', sans-serif"
+    font-size="58" font-weight="700"
+    letter-spacing="2"
+    fill="url(#hWord)">Tryda</text>
+</svg>

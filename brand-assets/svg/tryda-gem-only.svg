@@ -1,0 +1,42 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gemTop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4ECDC4"/>
+      <stop offset="100%" stop-color="#1A7A8A"/>
+    </linearGradient>
+    <linearGradient id="gemBody" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0%" stop-color="#2AAFBD"/>
+      <stop offset="100%" stop-color="#0F4F6A"/>
+    </linearGradient>
+    <linearGradient id="gemLeft" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#145374"/>
+      <stop offset="100%" stop-color="#1A8A9A"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Top bevel/table -->
+  <polygon points="100,28 140,58 60,58" fill="url(#gemTop)"/>
+
+  <!-- Left bevel -->
+  <polygon points="60,58 100,28 80,58" fill="#1A7A8A" opacity="0.85"/>
+
+  <!-- Right bevel -->
+  <polygon points="100,28 140,58 120,58" fill="#4ECDC4" opacity="0.75"/>
+
+  <!-- Main pavilion body -->
+  <polygon points="55,65 145,65 100,162" fill="url(#gemBody)"/>
+
+  <!-- Left pavilion facet -->
+  <polygon points="55,65 100,162 78,65" fill="url(#gemLeft)" opacity="0.85"/>
+
+  <!-- Right pavilion facet -->
+  <polygon points="145,65 100,162 122,65" fill="#3DBDBD" opacity="0.6"/>
+
+  <!-- Center pavilion line -->
+  <line x1="100" y1="65" x2="100" y2="162" stroke="#0F4F6A" stroke-width="1" opacity="0.4"/>
+
+  <!-- TT letterform inside top bevel -->
+  <rect x="76" y="35" width="48" height="7" rx="2" fill="white" opacity="0.95"/>
+  <rect x="84" y="35" width="9" height="23" rx="1.5" fill="white" opacity="0.95"/>
+  <rect x="107" y="35" width="9" height="23" rx="1.5" fill="white" opacity="0.95"/>
+</svg>
