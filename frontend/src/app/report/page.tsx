@@ -1,14 +1,47 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { QualityChart } from '@/components/QualityChart';
-import { MOCK_REPORT } from '@/lib/api';
+import { fetchReport } from '@/lib/api';
+import { PerformanceReport } from '@/types';
 import { rootCauseLabel, formatDate } from '@/lib/utils';
 import { TrendingDown, TrendingUp, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function ReportPage() {
-  const [report] = useState(MOCK_REPORT);
+  const [report, setReport] = useState<PerformanceReport | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchReport(7)
+      .then(setReport)
+      .catch(() => setError('Could not load the report from the Tryda API.'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen">
+        <Sidebar />
+        <main className="ml-56 flex-1 p-6 flex items-center justify-center">
+          <p className="text-sm text-gray-500">Loading report...</p>
+        </main>
+      </div>
+    );
+  }
+
+  if (error || !report) {
+    return (
+      <div className="flex min-h-screen">
+        <Sidebar />
+        <main className="ml-56 flex-1 p-6 flex items-center justify-center">
+          <p className="text-sm text-status-critical">{error || 'No report available'}</p>
+        </main>
+      </div>
+    );
+  }
+
   const { summary } = report;
 
   const TrendIcon = summary.trend === 'improving' ? TrendingUp

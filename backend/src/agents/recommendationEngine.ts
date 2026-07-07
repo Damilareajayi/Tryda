@@ -43,7 +43,7 @@ Respond ONLY with valid JSON array:
 export async function runRecommendationEngine(
   input: RecommendationAgentInput
 ): Promise<Recommendation[]> {
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
   try {
     const result = await model.generateContent(RECOMMENDATION_PROMPT(input));
@@ -59,7 +59,8 @@ export async function runRecommendationEngine(
       ...r,
       applied: false,
     }));
-  } catch {
+  } catch (err) {
+    console.error('Recommendation generation failed:', err);
     // Fallback recommendation when Gemini fails
     return [
       {

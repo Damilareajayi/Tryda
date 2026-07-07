@@ -68,6 +68,19 @@ export interface PerformanceReport {
   highlights: string[];
 }
 
+export type SubscriptionTier = 'free' | 'individual' | 'enterprise_team' | 'enterprise_business';
+
+export interface BusinessProfile {
+  id: string;
+  name: string;
+  industry: string;
+  aiToolDescription: string;
+  subscriptionTier: SubscriptionTier;
+  monthlyConversationLimit: number;
+  currentMonthCount: number;
+  hasBillingAccount: boolean;
+}
+
 // UI state types
 export type HealthStatus = 'healthy' | 'warning' | 'critical' | 'loading' | 'no-data';
 

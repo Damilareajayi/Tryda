@@ -37,9 +37,10 @@ Respond ONLY with valid JSON in this exact format:
 
 async function scoreConversation(
   log: ConversationLog,
-  businessContext: string
+  businessContext: string,
+  retriesLeft = 1
 ): Promise<QualityScore> {
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
   try {
     const result = await model.generateContent(
@@ -66,7 +67,17 @@ async function scoreConversation(
       safety: parsed.safety,
       reasoning: parsed.reasoning,
     };
-  } catch {
+  } catch (err: any) {
+    if (err?.status === 429 && retriesLeft > 0) {
+      const retryDelay = err?.errorDetails?.find(
+        (d: any) => d['@type']?.includes('RetryInfo')
+      )?.retryDelay;
+      const waitMs = retryDelay ? parseFloat(retryDelay) * 1000 : 15_000;
+      console.error(`Rate limited scoring ${log.id}, retrying in ${waitMs}ms`);
+      await new Promise((r) => setTimeout(r, waitMs));
+      return scoreConversation(log, businessContext, retriesLeft - 1);
+    }
+    console.error('Scoring failed for conversation', log.id, err);
     // Fallback score on parse failure — flag for human review
     return {
       overall: 0,
@@ -87,18 +98,18 @@ export async function runPerformanceMonitor(
   const results: MonitorAgentOutput['scores'] = [];
   const flagged: string[] = [];
 
-  // Score conversations in parallel batches of 5 to control API costs
-  const BATCH_SIZE = 5;
-  for (let i = 0; i < input.logs.length; i += BATCH_SIZE) {
-    const batch = input.logs.slice(i, i + BATCH_SIZE);
-    const batchResults = await Promise.all(
-      batch.map(async (log) => {
-        const score = await scoreConversation(log, businessContext);
-        if (score.overall < 60) flagged.push(log.id);
-        return { conversationId: log.id, score };
-      })
-    );
-    results.push(...batchResults);
+  // Gemini free-tier keys are capped at 5 requests/minute per model, so score
+  // sequentially with spacing rather than in parallel bursts. Paid billing on
+  // the Google AI Studio project raises this limit substantially.
+  const MAX_REQUESTS_PER_MINUTE = Number(process.env.GEMINI_RPM_LIMIT) || 5;
+  const DELAY_MS = Math.ceil(60_000 / MAX_REQUESTS_PER_MINUTE);
+
+  for (let i = 0; i < input.logs.length; i++) {
+    const log = input.logs[i];
+    const score = await scoreConversation(log, businessContext);
+    if (score.overall < 60) flagged.push(log.id);
+    results.push({ conversationId: log.id, score });
+    if (i < input.logs.length - 1) await new Promise((r) => setTimeout(r, DELAY_MS));
   }
 
   const averageScore =

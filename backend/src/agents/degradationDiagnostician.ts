@@ -92,7 +92,7 @@ export async function runDegradationDiagnostician(
   }
 
   // Use Gemini to classify root cause
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
   let rootCause: DriftRootCause = 'unknown';
   let confidence = 50;
@@ -109,7 +109,8 @@ export async function runDegradationDiagnostician(
     rootCause = parsed.rootCause as DriftRootCause;
     confidence = parsed.confidence;
     analysis = parsed.analysis;
-  } catch {
+  } catch (err) {
+    console.error('Root cause classification failed:', err);
     // Keep defaults
   }
 

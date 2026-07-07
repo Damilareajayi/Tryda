@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { runMonitoringPipeline } from '../services/monitoringPipeline';
 import { runReportingEngine } from '../agents/reportingEngine';
 import { ConversationLog, Business } from '../types';
+import { stripe, TIER_PRICE_IDS, TIER_CONVERSATION_LIMITS } from '../services/stripeClient';
 
 const router = Router();
 
@@ -85,6 +86,26 @@ router.post(
   }
 );
 
+// ── GET /business — Current business profile + subscription info ───────────
+router.get(
+  '/business',
+  generalLimiter,
+  authenticateBusiness,
+  async (req: Request, res: Response) => {
+    const business = (req as any).business as Business;
+    return res.json({
+      id: business.id,
+      name: business.name,
+      industry: business.industry,
+      aiToolDescription: business.aiToolDescription,
+      subscriptionTier: business.subscriptionTier,
+      monthlyConversationLimit: business.monthlyConversationLimit,
+      currentMonthCount: business.currentMonthCount,
+      hasBillingAccount: Boolean(business.stripeCustomerId),
+    });
+  }
+);
+
 // ── GET /report — Generate performance report ───────────────────────────────
 router.get(
   '/report',
@@ -114,11 +135,14 @@ router.get(
       const snap = await getFirestore()
         .collection('driftEvents')
         .where('businessId', '==', business.id)
-        .orderBy('detectedAt', 'desc')
-        .limit(20)
         .get();
 
-      return res.json(snap.docs.map((d) => d.data()));
+      const events = snap.docs
+        .map((d) => d.data())
+        .sort((a, b) => (b.detectedAt as string).localeCompare(a.detectedAt as string))
+        .slice(0, 20);
+
+      return res.json(events);
     } catch (err) {
       return res.status(500).json({ error: 'Failed to fetch drift events' });
     }
@@ -137,11 +161,14 @@ router.get(
         .collection('recommendations')
         .where('businessId', '==', business.id)
         .where('applied', '==', false)
-        .orderBy('createdAt', 'desc')
-        .limit(10)
         .get();
 
-      return res.json(snap.docs.map((d) => d.data()));
+      const recs = snap.docs
+        .map((d) => d.data())
+        .sort((a, b) => (b.createdAt as string).localeCompare(a.createdAt as string))
+        .slice(0, 10);
+
+      return res.json(recs);
     } catch (err) {
       return res.status(500).json({ error: 'Failed to fetch recommendations' });
     }
@@ -163,6 +190,126 @@ router.patch(
       return res.json({ success: true });
     } catch (err) {
       return res.status(500).json({ error: 'Failed to apply recommendation' });
+    }
+  }
+);
+
+// ── Billing ──────────────────────────────────────────────────────────────────
+const CheckoutSchema = z.object({
+  tier: z.enum(['individual', 'enterprise_team', 'enterprise_business']),
+});
+
+// ── POST /billing/create-checkout-session — start a paid subscription ───────
+router.post(
+  '/billing/create-checkout-session',
+  generalLimiter,
+  authenticateBusiness,
+  async (req: Request, res: Response) => {
+    try {
+      const { tier } = CheckoutSchema.parse(req.body);
+      const business = (req as any).business as Business;
+      const origin = process.env.ALLOWED_ORIGIN || 'http://localhost:3001';
+
+      let customerId = business.stripeCustomerId;
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: business.email,
+          name: business.name,
+          metadata: { businessId: business.id },
+        });
+        customerId = customer.id;
+        await getFirestore().collection('businesses').doc(business.id).update({
+          stripeCustomerId: customerId,
+        });
+      }
+
+      const session = await stripe.checkout.sessions.create({
+        mode: 'subscription',
+        customer: customerId,
+        line_items: [{ price: TIER_PRICE_IDS[tier], quantity: 1 }],
+        success_url: `${origin}/settings?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${origin}/settings?checkout=cancelled`,
+        metadata: { businessId: business.id, tier },
+      });
+
+      return res.json({ url: session.url });
+    } catch (err: any) {
+      if (err.name === 'ZodError') {
+        return res.status(400).json({ error: 'Invalid payload', details: err.errors });
+      }
+      console.error('Checkout session error:', err);
+      return res.status(500).json({ error: 'Could not start checkout' });
+    }
+  }
+);
+
+// ── POST /billing/create-portal-session — manage/cancel existing subscription
+router.post(
+  '/billing/create-portal-session',
+  generalLimiter,
+  authenticateBusiness,
+  async (req: Request, res: Response) => {
+    try {
+      const business = (req as any).business as Business;
+      const origin = process.env.ALLOWED_ORIGIN || 'http://localhost:3001';
+
+      if (!business.stripeCustomerId) {
+        return res.status(400).json({ error: 'No billing account found for this business yet' });
+      }
+
+      const session = await stripe.billingPortal.sessions.create({
+        customer: business.stripeCustomerId,
+        return_url: `${origin}/settings`,
+      });
+
+      return res.json({ url: session.url });
+    } catch (err) {
+      console.error('Portal session error:', err);
+      return res.status(500).json({ error: 'Could not open billing portal' });
+    }
+  }
+);
+
+// ── GET /billing/verify-session — confirm a checkout right after redirect ───
+// Complements the webhook (which remains the source of truth for renewals/
+// cancellations): gives the settings page immediate confirmation even before
+// the webhook has been delivered, without needing a locally-forwarded tunnel.
+router.get(
+  '/billing/verify-session',
+  generalLimiter,
+  authenticateBusiness,
+  async (req: Request, res: Response) => {
+    try {
+      const business = (req as any).business as Business;
+      const sessionId = req.query.session_id as string;
+      if (!sessionId) {
+        return res.status(400).json({ error: 'session_id is required' });
+      }
+
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+      if (session.metadata?.businessId !== business.id) {
+        return res.status(403).json({ error: 'Session does not belong to this business' });
+      }
+
+      if (session.payment_status !== 'paid') {
+        return res.json({ confirmed: false, status: session.payment_status });
+      }
+
+      const tier = session.metadata?.tier;
+      if (tier) {
+        await getFirestore().collection('businesses').doc(business.id).update({
+          subscriptionTier: tier,
+          stripeCustomerId: session.customer as string,
+          stripeSubscriptionId: session.subscription as string,
+          monthlyConversationLimit: TIER_CONVERSATION_LIMITS[tier] ?? 100,
+        });
+      }
+
+      return res.json({ confirmed: true, tier });
+    } catch (err) {
+      console.error('Verify session error:', err);
+      return res.status(500).json({ error: 'Could not verify checkout session' });
     }
   }
 );

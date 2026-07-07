@@ -1,17 +1,31 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { RecommendationCard } from '@/components/RecommendationCard';
-import { MOCK_RECOMMENDATIONS } from '@/lib/api';
+import { fetchRecommendations, applyRecommendation } from '@/lib/api';
 import { Recommendation } from '@/types';
 
 export default function RecommendationsPage() {
-  const [recs, setRecs] = useState<Recommendation[]>(MOCK_RECOMMENDATIONS);
+  const [recs, setRecs] = useState<Recommendation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchRecommendations()
+      .then(setRecs)
+      .catch(() => setError('Could not load recommendations from the Tryda API.'))
+      .finally(() => setLoading(false));
+  }, []);
 
   function handleApply(id: string) {
     setRecs((prev) =>
       prev.map((r) => r.id === id ? { ...r, applied: true, appliedAt: new Date().toISOString() } : r)
     );
+    applyRecommendation(id).catch(() => {
+      setRecs((prev) =>
+        prev.map((r) => r.id === id ? { ...r, applied: false, appliedAt: undefined } : r)
+      );
+    });
   }
 
   const open = recs.filter((r) => !r.applied);
@@ -28,7 +42,10 @@ export default function RecommendationsPage() {
           </p>
         </div>
 
-        {open.length > 0 && (
+        {loading && <p className="text-sm text-gray-500">Loading...</p>}
+        {error && <p className="text-sm text-status-critical">{error}</p>}
+
+        {!loading && !error && open.length > 0 && (
           <section>
             <p className="section-label">Waiting for Action ({open.length})</p>
             <div className="space-y-3">
@@ -39,7 +56,7 @@ export default function RecommendationsPage() {
           </section>
         )}
 
-        {done.length > 0 && (
+        {!loading && !error && done.length > 0 && (
           <section>
             <p className="section-label">Applied ({done.length})</p>
             <div className="space-y-3">
@@ -48,7 +65,7 @@ export default function RecommendationsPage() {
           </section>
         )}
 
-        {recs.length === 0 && (
+        {!loading && !error && recs.length === 0 && (
           <div className="card text-center py-16">
             <p className="text-2xl mb-2">✓</p>
             <p className="text-gray-300 font-medium">No open recommendations</p>

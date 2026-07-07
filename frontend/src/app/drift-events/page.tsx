@@ -1,12 +1,22 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { DriftEventCard } from '@/components/DriftEventCard';
-import { MOCK_DRIFT_EVENTS } from '@/lib/api';
+import { fetchDriftEvents } from '@/lib/api';
 import { DriftEvent } from '@/types';
 
 export default function DriftEventsPage() {
-  const [events] = useState<DriftEvent[]>(MOCK_DRIFT_EVENTS);
+  const [events, setEvents] = useState<DriftEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchDriftEvents()
+      .then(setEvents)
+      .catch(() => setError('Could not load drift events from the Tryda API.'))
+      .finally(() => setLoading(false));
+  }, []);
+
   const open = events.filter((e) => !e.resolved);
   const resolved = events.filter((e) => e.resolved);
 
@@ -21,7 +31,10 @@ export default function DriftEventsPage() {
           </p>
         </div>
 
-        {open.length > 0 && (
+        {loading && <p className="text-sm text-gray-500">Loading...</p>}
+        {error && <p className="text-sm text-status-critical">{error}</p>}
+
+        {!loading && !error && open.length > 0 && (
           <section>
             <p className="section-label">Open — Needs Attention ({open.length})</p>
             <div className="space-y-3">
@@ -30,7 +43,7 @@ export default function DriftEventsPage() {
           </section>
         )}
 
-        {resolved.length > 0 && (
+        {!loading && !error && resolved.length > 0 && (
           <section>
             <p className="section-label">Resolved ({resolved.length})</p>
             <div className="space-y-3">
@@ -39,7 +52,7 @@ export default function DriftEventsPage() {
           </section>
         )}
 
-        {events.length === 0 && (
+        {!loading && !error && events.length === 0 && (
           <div className="card text-center py-16">
             <p className="text-2xl mb-2">✓</p>
             <p className="text-gray-300 font-medium">No drift events detected</p>

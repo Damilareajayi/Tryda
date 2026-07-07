@@ -93,6 +93,8 @@ export interface PerformanceReport {
   highlights: string[];
 }
 
+export type SubscriptionTier = 'free' | 'individual' | 'enterprise_team' | 'enterprise_business';
+
 export interface Business {
   id: string;
   name: string;
@@ -102,7 +104,9 @@ export interface Business {
   webhookUrl?: string;
   apiKey: string;             // Their Tryda API key for log ingestion
   createdAt: string;
-  subscriptionTier: 'starter' | 'growth' | 'scale';
+  subscriptionTier: SubscriptionTier;
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
   monthlyConversationLimit: number;
   currentMonthCount: number;
 }

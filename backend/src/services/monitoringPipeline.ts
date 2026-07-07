@@ -51,16 +51,18 @@ export async function runMonitoringPipeline(
   const historySnap = await db
     .collection('qualityScores')
     .where('businessId', '==', business.id)
-    .orderBy('processedAt', 'desc')
-    .limit(14)
     .get();
 
   const historicalScores = historySnap.docs
     .map((d) => ({
       date: (d.data().processedAt as string).slice(0, 10),
       averageScore: d.data().averageScore as number,
+      processedAt: d.data().processedAt as string,
     }))
-    .reverse();
+    .sort((a, b) => b.processedAt.localeCompare(a.processedAt))
+    .slice(0, 14)
+    .reverse()
+    .map(({ date, averageScore }) => ({ date, averageScore }));
 
   // ── Step 3: Degradation Diagnostician Agent ────────────────────────────────
   const diagnostics = await runDegradationDiagnostician({

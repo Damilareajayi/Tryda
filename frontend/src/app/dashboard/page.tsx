@@ -6,7 +6,7 @@ import { HealthScoreRing } from '@/components/HealthScoreRing';
 import { QualityChart } from '@/components/QualityChart';
 import { DriftEventCard } from '@/components/DriftEventCard';
 import { RecommendationCard } from '@/components/RecommendationCard';
-import { MOCK_REPORT, MOCK_DRIFT_EVENTS, MOCK_RECOMMENDATIONS } from '@/lib/api';
+import { fetchReport, fetchDriftEvents, fetchRecommendations } from '@/lib/api';
 import { scoreToStatus } from '@/lib/utils';
 import { PerformanceReport, DriftEvent, Recommendation } from '@/types';
 import { cn } from '@/lib/utils';
@@ -48,9 +48,49 @@ function TrendBadge({ trend, pct }: { trend: string; pct: number }) {
 }
 
 export default function DashboardPage() {
-  const [report] = useState<PerformanceReport>(MOCK_REPORT);
-  const [driftEvents] = useState<DriftEvent[]>(MOCK_DRIFT_EVENTS);
-  const [recs] = useState<Recommendation[]>(MOCK_RECOMMENDATIONS);
+  const [report, setReport] = useState<PerformanceReport | null>(null);
+  const [driftEvents, setDriftEvents] = useState<DriftEvent[]>([]);
+  const [recs, setRecs] = useState<Recommendation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    Promise.all([fetchReport(7), fetchDriftEvents(), fetchRecommendations()])
+      .then(([r, d, rec]) => {
+        setReport(r);
+        setDriftEvents(d);
+        setRecs(rec);
+      })
+      .catch(() => setError('Could not load data from the Tryda API. Make sure your API key is connected.'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen">
+        <Sidebar />
+        <main className="ml-56 flex-1 p-6 flex items-center justify-center">
+          <p className="text-sm text-gray-500">Loading dashboard...</p>
+        </main>
+      </div>
+    );
+  }
+
+  if (error || !report) {
+    return (
+      <div className="flex min-h-screen">
+        <Sidebar />
+        <main className="ml-56 flex-1 p-6 flex items-center justify-center">
+          <div className="card text-center py-16 max-w-md">
+            <p className="text-gray-300 font-medium">{error || 'No data yet'}</p>
+            <p className="text-sm text-gray-500 mt-1">
+              Visit the Connect page to set up your API key, then send some conversation logs.
+            </p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   const score = report.summary.averageQualityScore;
   const status = scoreToStatus(score);

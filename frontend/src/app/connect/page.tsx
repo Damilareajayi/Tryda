@@ -1,12 +1,13 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { Copy, CheckCircle, ExternalLink } from 'lucide-react';
 
-const DEMO_API_KEY = 'dl_live_demo_a1b2c3d4e5f6';
+const DEMO_API_KEY = process.env.NEXT_PUBLIC_DEMO_API_KEY || 'dl_live_demo_a1b2c3d4e5f6';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
 const CODE_SNIPPET = `// Send your AI conversation logs to Tryda
-const response = await fetch('https://api.tryda.ai/api/ingest', {
+const response = await fetch('${API_URL}/api/ingest', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
@@ -25,6 +26,10 @@ const response = await fetch('https://api.tryda.ai/api/ingest', {
 
 export default function ConnectPage() {
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem('tryda_api_key', DEMO_API_KEY);
+  }, []);
 
   function copy() {
     navigator.clipboard.writeText(CODE_SNIPPET);

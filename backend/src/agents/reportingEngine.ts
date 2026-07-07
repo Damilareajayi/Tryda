@@ -33,31 +33,37 @@ export async function runReportingEngine(
   const now = new Date();
   const periodStart = new Date(now.getTime() - periodDays * 24 * 60 * 60 * 1000);
 
-  // Fetch quality scores for the period
+  // Fetch quality scores for the period (filtered/sorted in-app to avoid
+  // requiring a Firestore composite index for businessId + date range queries)
+  const periodStartIso = periodStart.toISOString();
+
   const scoresSnap = await db
     .collection('qualityScores')
     .where('businessId', '==', businessId)
-    .where('processedAt', '>=', periodStart.toISOString())
-    .orderBy('processedAt', 'asc')
     .get();
 
-  // Fetch drift events for the period
   const driftSnap = await db
     .collection('driftEvents')
     .where('businessId', '==', businessId)
-    .where('detectedAt', '>=', periodStart.toISOString())
     .get();
 
-  // Fetch recommendations for the period
   const recsSnap = await db
     .collection('recommendations')
     .where('businessId', '==', businessId)
-    .where('createdAt', '>=', periodStart.toISOString())
     .get();
 
-  const scores = scoresSnap.docs.map((d) => d.data());
-  const driftEvents = driftSnap.docs.map((d) => d.data() as DriftEvent);
-  const recommendations = recsSnap.docs.map((d) => d.data() as Recommendation);
+  const scores = scoresSnap.docs
+    .map((d) => d.data())
+    .filter((s) => (s.processedAt as string) >= periodStartIso)
+    .sort((a, b) => (a.processedAt as string).localeCompare(b.processedAt as string));
+
+  const driftEvents = driftSnap.docs
+    .map((d) => d.data() as DriftEvent)
+    .filter((e) => e.detectedAt >= periodStartIso);
+
+  const recommendations = recsSnap.docs
+    .map((d) => d.data() as Recommendation)
+    .filter((r) => r.createdAt >= periodStartIso);
 
   // Build quality timeline by day
   const timelineMap = new Map<string, { total: number; count: number }>();
@@ -152,12 +158,13 @@ export async function runReportingEngine(
   ];
 
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
     const result = await model.generateContent(HIGHLIGHTS_PROMPT(reportBase));
     const text = result.response.text().trim();
     const clean = text.replace(/```json|```/g, '').trim();
     highlights = JSON.parse(clean);
-  } catch {
+  } catch (err) {
+    console.error('Highlights generation failed:', err);
     // Keep fallback highlights
   }
 

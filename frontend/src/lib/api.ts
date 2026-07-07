@@ -1,4 +1,4 @@
-import { PerformanceReport, DriftEvent, Recommendation } from '@/types';
+import { PerformanceReport, DriftEvent, Recommendation, BusinessProfile, SubscriptionTier } from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
@@ -43,6 +43,25 @@ export async function ingestLogs(logs: unknown[]): Promise<unknown> {
     method: 'POST',
     body: JSON.stringify({ logs }),
   });
+}
+
+export async function fetchBusiness(): Promise<BusinessProfile> {
+  return apiFetch<BusinessProfile>('/business');
+}
+
+export async function createCheckoutSession(tier: SubscriptionTier): Promise<{ url: string }> {
+  return apiFetch('/billing/create-checkout-session', {
+    method: 'POST',
+    body: JSON.stringify({ tier }),
+  });
+}
+
+export async function createPortalSession(): Promise<{ url: string }> {
+  return apiFetch('/billing/create-portal-session', { method: 'POST' });
+}
+
+export async function verifyCheckoutSession(sessionId: string): Promise<{ confirmed: boolean; tier?: string }> {
+  return apiFetch(`/billing/verify-session?session_id=${encodeURIComponent(sessionId)}`);
 }
 
 // ── Mock data for demo / development ────────────────────────────────────────
