@@ -84,7 +84,12 @@ export default function DashboardPage() {
       <div className="flex min-h-screen">
         <Sidebar />
         <main className="ml-56 flex-1 p-6 flex items-center justify-center">
-          <div className="card text-center py-16 max-w-md">
+          <div className="card text-center py-12 px-10 max-w-md">
+            <img
+              src="/brand/mascot/tryda-mascot-sitting-orb.png"
+              alt=""
+              className="w-28 mx-auto mb-4 opacity-90"
+            />
             <p className="text-gray-300 font-medium">{error || 'No data yet'}</p>
             <p className="text-sm text-gray-500 mt-1">
               Visit the Connect page to set up your API key, then send some conversation logs.

@@ -87,21 +87,34 @@ export default function LandingPage() {
       </header>
 
       {/* Hero */}
-      <section className="max-w-4xl mx-auto px-6 pt-20 pb-16 text-center">
-        <div className="inline-flex items-center gap-2 bg-teal-glow border border-teal/20 rounded-full px-3 py-1 text-xs text-teal font-medium mb-6">
-          <span className="w-1.5 h-1.5 rounded-full bg-teal animate-pulse" />
-          Diagnostic AI for chatbots &amp; APIs
-        </div>
-        <h1 className="text-4xl sm:text-5xl font-bold text-gray-100 tracking-tight leading-tight">
-          Catch AI drift before<br />your customers do.
-        </h1>
-        <p className="text-lg text-gray-400 mt-5 max-w-2xl mx-auto">
-          Tryda monitors every conversation your AI assistant has, scores its quality in real time,
-          and tells you exactly what to fix when something goes wrong.
-        </p>
-        <div className="flex items-center justify-center gap-3 mt-8">
-          <Link href="/signup" className="btn-primary text-sm px-6 py-3">Start monitoring free</Link>
-          <Link href="/signin" className="btn-ghost text-sm px-6 py-3 border border-surface-border">Sign In</Link>
+      <section className="max-w-6xl mx-auto px-6 pt-20 pb-16">
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="text-center lg:text-left">
+            <div className="inline-flex items-center gap-2 bg-teal-glow border border-teal/20 rounded-full px-3 py-1 text-xs text-teal font-medium mb-6">
+              <span className="w-1.5 h-1.5 rounded-full bg-teal animate-pulse" />
+              Diagnostic AI for chatbots &amp; APIs
+            </div>
+            <h1 className="text-4xl sm:text-5xl font-bold text-gray-100 tracking-tight leading-tight">
+              Catch AI drift before<br />your customers do.
+            </h1>
+            <p className="text-lg text-gray-400 mt-5 max-w-2xl mx-auto lg:mx-0">
+              Tryda monitors every conversation your AI assistant has, scores its quality in real time,
+              and tells you exactly what to fix when something goes wrong.
+            </p>
+            <div className="flex items-center justify-center lg:justify-start gap-3 mt-8">
+              <Link href="/signup" className="btn-primary text-sm px-6 py-3">Start monitoring free</Link>
+              <Link href="/signin" className="btn-ghost text-sm px-6 py-3 border border-surface-border">Sign In</Link>
+            </div>
+          </div>
+
+          <div className="relative flex justify-center lg:justify-end">
+            <div className="absolute w-80 h-80 sm:w-[28rem] sm:h-[28rem] bg-teal/15 rounded-full blur-[90px]" />
+            <img
+              src="/brand/mascot/tryda-mascot-standing.png"
+              alt="Tryda mascot"
+              className="relative w-full max-w-xs sm:max-w-sm rounded-2xl border border-surface-border shadow-card animate-fade-in"
+            />
+          </div>
         </div>
       </section>
 

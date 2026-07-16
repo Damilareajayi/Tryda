@@ -33,34 +33,44 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<'email' | 'google' | null>(null);
   const [resumingRedirect, setResumingRedirect] = useState(true);
+  // Set once a Google sign-in has succeeded but the account has no business
+  // record yet — we still need the profile fields, just after auth instead
+  // of gating the "Continue with Google" button behind them.
+  const [needsProfile, setNeedsProfile] = useState(false);
 
-  const profileComplete = name.trim() && industry && aiToolDescription.trim();
+  const profileComplete = Boolean(name.trim() && industry && aiToolDescription.trim());
 
   // Completes the flow after Google redirects back here (signInWithRedirect
   // navigates the whole page away and back — form state doesn't survive that,
-  // so the business profile fields were stashed in sessionStorage first).
+  // so any profile fields typed beforehand were stashed in sessionStorage).
   useEffect(() => {
     getRedirectResult(auth)
       .then(async (result) => {
         if (!result) return;
         const stored = sessionStorage.getItem(PENDING_PROFILE_KEY);
-        if (!stored) {
-          setError('Your business details were lost — please fill in the form and try again.');
-          return;
-        }
         sessionStorage.removeItem(PENDING_PROFILE_KEY);
-        await provisionAccount(JSON.parse(stored));
-        router.push('/dashboard');
+        const parsed = stored ? JSON.parse(stored) : {};
+
+        try {
+          await provisionAccount(parsed);
+          router.push('/dashboard');
+        } catch (err: any) {
+          if (err?.status === 400) {
+            // New Google account, no business yet — collect the missing
+            // details now instead of before auth.
+            if (parsed.name) setName(parsed.name);
+            if (parsed.industry) setIndustry(parsed.industry);
+            if (parsed.aiToolDescription) setAiToolDescription(parsed.aiToolDescription);
+            setNeedsProfile(true);
+          } else {
+            setError(friendlyError(err));
+          }
+        }
       })
       .catch((err) => setError(friendlyError(err)))
       .finally(() => setResumingRedirect(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  async function finishSignup() {
-    await provisionAccount({ name: name.trim(), industry, aiToolDescription: aiToolDescription.trim() });
-    router.push('/dashboard');
-  }
 
   async function handleEmailSignup(e: React.FormEvent) {
     e.preventDefault();
@@ -72,7 +82,8 @@ export default function SignupPage() {
     setLoading('email');
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-      await finishSignup();
+      await provisionAccount({ name: name.trim(), industry, aiToolDescription: aiToolDescription.trim() });
+      router.push('/dashboard');
     } catch (err: any) {
       setError(friendlyError(err));
       setLoading(null);
@@ -80,16 +91,30 @@ export default function SignupPage() {
   }
 
   async function handleGoogleSignup() {
-    if (!profileComplete) {
-      setError('Please fill in your business details first, then continue with Google.');
-      return;
-    }
     setError(null);
+    setLoading('google');
     sessionStorage.setItem(
       PENDING_PROFILE_KEY,
       JSON.stringify({ name: name.trim(), industry, aiToolDescription: aiToolDescription.trim() })
     );
     await signInWithRedirect(auth, googleProvider);
+  }
+
+  async function handleCompleteProfile(e: React.FormEvent) {
+    e.preventDefault();
+    if (!profileComplete) {
+      setError('Please fill in your business details.');
+      return;
+    }
+    setError(null);
+    setLoading('google');
+    try {
+      await provisionAccount({ name: name.trim(), industry, aiToolDescription: aiToolDescription.trim() });
+      router.push('/dashboard');
+    } catch (err: any) {
+      setError(friendlyError(err));
+      setLoading(null);
+    }
   }
 
   if (resumingRedirect) {
@@ -101,72 +126,134 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6">
+    <div className="min-h-screen flex">
+      <div className="hidden lg:flex lg:w-1/2 items-center justify-center relative overflow-hidden bg-navy-800/40 border-r border-surface-border p-12">
+        <div className="absolute w-96 h-96 bg-teal/10 rounded-full blur-[100px]" />
+        <div className="relative text-center max-w-sm">
+          <img
+            src="/brand/mascot/tryda-mascot-dashboard.png"
+            alt="Tryda mascot"
+            className="w-64 mx-auto rounded-2xl border border-surface-border shadow-card animate-fade-in -scale-x-100"
+          />
+          <p className="text-lg font-semibold text-gray-100 mt-6">Your AI's reliability co-pilot</p>
+          <p className="text-sm text-gray-500 mt-2">
+            Tryda catches quality drift before your customers ever notice — set up monitoring in minutes.
+          </p>
+        </div>
+      </div>
+
+      <div className="flex-1 flex items-center justify-center p-6">
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-8">
           <Logo size={48} />
-          <h1 className="text-xl font-semibold text-gray-100 mt-4">Create your account</h1>
-          <p className="text-sm text-gray-500 mt-1">Start monitoring your AI's reliability in minutes</p>
+          <h1 className="text-xl font-semibold text-gray-100 mt-4">
+            {needsProfile ? 'One more step' : 'Create your account'}
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            {needsProfile
+              ? `Signed in as ${auth.currentUser?.email} — tell us about your business`
+              : "Start monitoring your AI's reliability in minutes"}
+          </p>
         </div>
 
-        <form onSubmit={handleEmailSignup} className="card space-y-4">
-          {error && (
-            <div className="bg-status-critical/10 border border-status-critical/30 rounded-lg px-3 py-2 text-xs text-status-critical">
-              {error}
+        {needsProfile ? (
+          <form onSubmit={handleCompleteProfile} className="card space-y-4">
+            {error && (
+              <div className="bg-status-critical/10 border border-status-critical/30 rounded-lg px-3 py-2 text-xs text-status-critical">
+                {error}
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <input
+                className="input" placeholder="Business name" value={name}
+                onChange={(e) => setName(e.target.value)} required
+              />
+              <select className="input" value={industry} onChange={(e) => setIndustry(e.target.value)} required>
+                <option value="" disabled>Select industry</option>
+                {INDUSTRIES.map((i) => <option key={i} value={i}>{i}</option>)}
+              </select>
+              <input
+                className="input" placeholder="What AI tool are you running? (e.g. GPT-4 support widget)"
+                value={aiToolDescription} onChange={(e) => setAiToolDescription(e.target.value)} required
+              />
             </div>
-          )}
 
-          <div className="space-y-3">
-            <p className="section-label !mb-1">Your Business</p>
-            <input
-              className="input" placeholder="Business name" value={name}
-              onChange={(e) => setName(e.target.value)} required
-            />
-            <select className="input" value={industry} onChange={(e) => setIndustry(e.target.value)} required>
-              <option value="" disabled>Select industry</option>
-              {INDUSTRIES.map((i) => <option key={i} value={i}>{i}</option>)}
-            </select>
-            <input
-              className="input" placeholder="What AI tool are you running? (e.g. GPT-4 support widget)"
-              value={aiToolDescription} onChange={(e) => setAiToolDescription(e.target.value)} required
-            />
-          </div>
+            <button type="submit" className="btn-primary w-full" disabled={loading !== null}>
+              {loading === 'google' ? 'Finishing up...' : 'Finish setting up'}
+            </button>
 
-          <div className="space-y-3 pt-2 border-t border-surface-border">
-            <p className="section-label !mb-1 !mt-3">Account</p>
-            <input
-              className="input" type="email" placeholder="Email" value={email}
-              onChange={(e) => setEmail(e.target.value)} required
-            />
-            <input
-              className="input" type="password" placeholder="Password (min 6 characters)" value={password}
-              onChange={(e) => setPassword(e.target.value)} minLength={6} required
-            />
-          </div>
+            <button
+              type="button"
+              onClick={() => auth.signOut().then(() => setNeedsProfile(false))}
+              className="text-xs text-gray-500 hover:text-gray-300 w-full text-center"
+            >
+              Not you? Sign out
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleEmailSignup} className="card space-y-4">
+            {error && (
+              <div className="bg-status-critical/10 border border-status-critical/30 rounded-lg px-3 py-2 text-xs text-status-critical">
+                {error}
+              </div>
+            )}
 
-          <button type="submit" className="btn-primary w-full" disabled={loading !== null}>
-            {loading === 'email' ? 'Creating account...' : 'Create account'}
-          </button>
+            <div className="space-y-3">
+              <p className="section-label !mb-1">Your Business</p>
+              <input
+                className="input" placeholder="Business name" value={name}
+                onChange={(e) => setName(e.target.value)} required
+              />
+              <select className="input" value={industry} onChange={(e) => setIndustry(e.target.value)} required>
+                <option value="" disabled>Select industry</option>
+                {INDUSTRIES.map((i) => <option key={i} value={i}>{i}</option>)}
+              </select>
+              <input
+                className="input" placeholder="What AI tool are you running? (e.g. GPT-4 support widget)"
+                value={aiToolDescription} onChange={(e) => setAiToolDescription(e.target.value)} required
+              />
+            </div>
 
-          <div className="flex items-center gap-3 text-xs text-gray-600">
-            <div className="flex-1 h-px bg-surface-border" />
-            or
-            <div className="flex-1 h-px bg-surface-border" />
-          </div>
+            <div className="space-y-3 pt-2 border-t border-surface-border">
+              <p className="section-label !mb-1 !mt-3">Account</p>
+              <input
+                className="input" type="email" placeholder="Email" value={email}
+                onChange={(e) => setEmail(e.target.value)} required
+              />
+              <input
+                className="input" type="password" placeholder="Password (min 6 characters)" value={password}
+                onChange={(e) => setPassword(e.target.value)} minLength={6} required
+              />
+            </div>
 
-          <button
-            type="button" onClick={handleGoogleSignup} disabled={loading !== null}
-            className="btn-ghost w-full border border-surface-border flex items-center justify-center gap-2"
-          >
-            <GoogleIcon />
-            Continue with Google
-          </button>
-        </form>
+            <button type="submit" className="btn-primary w-full" disabled={loading !== null}>
+              {loading === 'email' ? 'Creating account...' : 'Create account'}
+            </button>
 
-        <p className="text-center text-sm text-gray-500 mt-6">
-          Already have an account?{' '}
-          <Link href="/signin" className="text-teal hover:underline">Sign in</Link>
-        </p>
+            <div className="flex items-center gap-3 text-xs text-gray-600">
+              <div className="flex-1 h-px bg-surface-border" />
+              or
+              <div className="flex-1 h-px bg-surface-border" />
+            </div>
+
+            <button
+              type="button" onClick={handleGoogleSignup} disabled={loading !== null}
+              className="btn-ghost w-full border border-surface-border flex items-center justify-center gap-2"
+            >
+              <GoogleIcon />
+              {loading === 'google' ? 'Redirecting...' : 'Continue with Google'}
+            </button>
+          </form>
+        )}
+
+        {!needsProfile && (
+          <p className="text-center text-sm text-gray-500 mt-6">
+            Already have an account?{' '}
+            <Link href="/signin" className="text-teal hover:underline">Sign in</Link>
+          </p>
+        )}
+      </div>
       </div>
     </div>
   );

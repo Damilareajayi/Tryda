@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/Sidebar';
 import { fetchBusiness, createCheckoutSession, createPortalSession, verifyCheckoutSession } from '@/lib/api';
@@ -21,6 +21,14 @@ const UPGRADE_OPTIONS: Array<{ tier: SubscriptionTier; label: string; price: str
 ];
 
 export default function SettingsPage() {
+  return (
+    <Suspense fallback={null}>
+      <SettingsPageInner />
+    </Suspense>
+  );
+}
+
+function SettingsPageInner() {
   const { user, loading: authLoading } = useRequireAuth();
   const { signOut } = useAuth();
   const router = useRouter();
