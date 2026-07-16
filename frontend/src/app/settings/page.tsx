@@ -15,9 +15,9 @@ const PLAN_LABELS: Record<SubscriptionTier, string> = {
 };
 
 const UPGRADE_OPTIONS: Array<{ tier: SubscriptionTier; label: string; price: string; blurb: string }> = [
-  { tier: 'individual', label: 'Individual', price: '$10/mo', blurb: '1,000 conversations/month · 1 AI tool' },
-  { tier: 'enterprise_team', label: 'Enterprise — Team', price: '$50/mo', blurb: '10,000 conversations/month · multiple AI tools' },
-  { tier: 'enterprise_business', label: 'Enterprise — Business', price: '$100/mo', blurb: 'Unlimited conversations · dedicated support' },
+  { tier: 'individual', label: 'Individual', price: '$10/mo', blurb: '1,000 conversations/month · 1 AI tool · CSV & Excel export' },
+  { tier: 'enterprise_team', label: 'Enterprise — Team', price: '$50/mo', blurb: '10,000 conversations/month · multiple AI tools · CSV & Excel export' },
+  { tier: 'enterprise_business', label: 'Enterprise — Business', price: '$100/mo', blurb: 'Unlimited conversations · dedicated support · CSV & Excel export' },
 ];
 
 export default function SettingsPage() {

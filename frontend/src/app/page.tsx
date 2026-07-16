@@ -39,25 +39,25 @@ const PLANS = [
   {
     name: 'Free', price: '$0', period: '',
     blurb: 'Get started and see it work',
-    features: ['100 conversations/month', '1 AI tool', 'Quality scoring', 'Basic drift alerts'],
+    features: ['100 conversations/month', '1 AI tool', 'Quality scoring', 'Basic drift alerts', 'CSV/JSON log upload (200 rows)'],
     cta: 'Start free', highlight: false,
   },
   {
     name: 'Individual', price: '$10', period: '/mo',
     blurb: 'For solo builders and small teams',
-    features: ['1,000 conversations/month', '1 AI tool', 'Full drift detection', 'AI recommendations'],
+    features: ['1,000 conversations/month', '1 AI tool', 'Full drift detection', 'AI recommendations', 'CSV & Excel export', 'Bulk log upload (5,000 rows)'],
     cta: 'Get started', highlight: true,
   },
   {
     name: 'Enterprise — Team', price: '$50', period: '/mo',
     blurb: 'For growing support teams',
-    features: ['10,000 conversations/month', 'Multiple AI tools', 'Priority alerts', 'Weekly reports'],
+    features: ['10,000 conversations/month', 'Multiple AI tools', 'Priority alerts', 'Weekly reports', 'CSV & Excel export', 'Bulk log upload (5,000 rows)'],
     cta: 'Get started', highlight: false,
   },
   {
     name: 'Enterprise — Business', price: '$100', period: '/mo',
     blurb: 'For high-volume operations',
-    features: ['Unlimited conversations', 'Unlimited AI tools', 'Dedicated support', 'Custom thresholds'],
+    features: ['Unlimited conversations', 'Unlimited AI tools', 'Dedicated support', 'Custom thresholds', 'CSV & Excel export', 'Bulk log upload (5,000 rows)'],
     cta: 'Get started', highlight: false,
   },
 ];
