@@ -3,13 +3,6 @@ import { auth } from './firebase';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
-function getApiKey(): string {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem('tryda_api_key') || '';
-  }
-  return '';
-}
-
 // Dashboard-facing endpoints authenticate the logged-in user via their
 // Firebase ID token — distinct from the long-lived x-api-key used by
 // customers' AI tools to POST /ingest (see ingestLogs below).
@@ -62,10 +55,15 @@ export async function applyRecommendation(id: string): Promise<void> {
 
 // Uses the business's long-lived x-api-key, not the logged-in user's
 // session — this is the same call an external AI tool would make.
-export async function ingestLogs(logs: unknown[]): Promise<unknown> {
+export async function ingestLogs(logs: unknown[], apiKey: string): Promise<{
+  success: boolean;
+  processed: number;
+  driftDetected: boolean;
+  message: string;
+}> {
   const res = await fetch(`${API_URL}/api/ingest`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-api-key': getApiKey() },
+    headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
     body: JSON.stringify({ logs }),
   });
   if (!res.ok) throw new Error(`API error: ${res.status}`);

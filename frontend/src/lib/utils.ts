@@ -1,8 +1,12 @@
 import { clsx, type ClassValue } from 'clsx';
-import { DriftSeverity, DriftRootCause, HealthStatus } from '@/types';
+import { DriftSeverity, DriftRootCause, HealthStatus, SubscriptionTier } from '@/types';
 
 export function cn(...inputs: ClassValue[]) {
   return clsx(inputs);
+}
+
+export function isPremiumTier(tier: SubscriptionTier): boolean {
+  return tier !== 'free';
 }
 
 export function scoreToStatus(score: number): HealthStatus {

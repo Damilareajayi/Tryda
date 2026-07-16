@@ -2,20 +2,25 @@
 import { useEffect, useState } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { RecommendationCard } from '@/components/RecommendationCard';
-import { fetchRecommendations, applyRecommendation } from '@/lib/api';
-import { Recommendation } from '@/types';
+import { ExportButtons } from '@/components/ExportButtons';
+import { fetchRecommendations, applyRecommendation, fetchBusiness } from '@/lib/api';
+import { Recommendation, BusinessProfile } from '@/types';
 import { useRequireAuth } from '@/lib/useRequireAuth';
 
 export default function RecommendationsPage() {
   const { user, loading: authLoading } = useRequireAuth();
   const [recs, setRecs] = useState<Recommendation[]>([]);
+  const [business, setBusiness] = useState<BusinessProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
-    fetchRecommendations()
-      .then(setRecs)
+    Promise.all([fetchRecommendations(), fetchBusiness()])
+      .then(([r, b]) => {
+        setRecs(r);
+        setBusiness(b);
+      })
       .catch(() => setError('Could not load recommendations from the Tryda API.'))
       .finally(() => setLoading(false));
   }, [user]);
@@ -38,11 +43,33 @@ export default function RecommendationsPage() {
     <div className="flex min-h-screen">
       <Sidebar />
       <main className="ml-56 flex-1 p-6 space-y-6">
-        <div>
-          <h1 className="text-xl font-semibold text-gray-100">Recommendations</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            AI-generated fixes for every detected quality issue
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-semibold text-gray-100">Recommendations</h1>
+            <p className="text-sm text-gray-500 mt-0.5">
+              AI-generated fixes for every detected quality issue
+            </p>
+          </div>
+          {business && (
+            <ExportButtons
+              tier={business.subscriptionTier}
+              filenameBase="tryda-recommendations"
+              sheetName="Recommendations"
+              rows={recs.map((r) => ({
+                id: r.id,
+                createdAt: r.createdAt,
+                priority: r.priority,
+                category: r.category,
+                title: r.title,
+                description: r.description,
+                actionSteps: r.actionSteps.join(' | '),
+                estimatedImpact: r.estimatedImpact,
+                autoApplicable: r.autoApplicable,
+                applied: r.applied,
+                appliedAt: r.appliedAt ?? '',
+              }))}
+            />
+          )}
         </div>
 
         {(authLoading || !user || loading) && <p className="text-sm text-gray-500">Loading...</p>}

@@ -2,8 +2,9 @@
 import { useEffect, useState } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { QualityChart } from '@/components/QualityChart';
-import { fetchReport } from '@/lib/api';
-import { PerformanceReport } from '@/types';
+import { ExportButtons } from '@/components/ExportButtons';
+import { fetchReport, fetchBusiness } from '@/lib/api';
+import { PerformanceReport, BusinessProfile } from '@/types';
 import { rootCauseLabel, formatDate } from '@/lib/utils';
 import { TrendingDown, TrendingUp, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -12,13 +13,17 @@ import { useRequireAuth } from '@/lib/useRequireAuth';
 export default function ReportPage() {
   const { user, loading: authLoading } = useRequireAuth();
   const [report, setReport] = useState<PerformanceReport | null>(null);
+  const [business, setBusiness] = useState<BusinessProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
-    fetchReport(7)
-      .then(setReport)
+    Promise.all([fetchReport(7), fetchBusiness()])
+      .then(([r, b]) => {
+        setReport(r);
+        setBusiness(b);
+      })
       .catch(() => setError('Could not load the report from the Tryda API.'))
       .finally(() => setLoading(false));
   }, [user]);
@@ -64,7 +69,17 @@ export default function ReportPage() {
               {formatDate(report.period.from)} — {formatDate(report.period.to)}
             </p>
           </div>
-          <button className="btn-primary">Download PDF</button>
+          <div className="flex items-center gap-2">
+            {business && (
+              <ExportButtons
+                tier={business.subscriptionTier}
+                filenameBase="tryda-quality-timeline"
+                sheetName="Quality Timeline"
+                rows={report.qualityTimeline}
+              />
+            )}
+            <button className="btn-primary">Download PDF</button>
+          </div>
         </div>
 
         {/* Highlights */}

@@ -2,20 +2,25 @@
 import { useEffect, useState } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { DriftEventCard } from '@/components/DriftEventCard';
-import { fetchDriftEvents } from '@/lib/api';
-import { DriftEvent } from '@/types';
+import { ExportButtons } from '@/components/ExportButtons';
+import { fetchDriftEvents, fetchBusiness } from '@/lib/api';
+import { DriftEvent, BusinessProfile } from '@/types';
 import { useRequireAuth } from '@/lib/useRequireAuth';
 
 export default function DriftEventsPage() {
   const { user, loading: authLoading } = useRequireAuth();
   const [events, setEvents] = useState<DriftEvent[]>([]);
+  const [business, setBusiness] = useState<BusinessProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
-    fetchDriftEvents()
-      .then(setEvents)
+    Promise.all([fetchDriftEvents(), fetchBusiness()])
+      .then(([e, b]) => {
+        setEvents(e);
+        setBusiness(b);
+      })
       .catch(() => setError('Could not load drift events from the Tryda API.'))
       .finally(() => setLoading(false));
   }, [user]);
@@ -27,11 +32,32 @@ export default function DriftEventsPage() {
     <div className="flex min-h-screen">
       <Sidebar />
       <main className="ml-56 flex-1 p-6 space-y-6">
-        <div>
-          <h1 className="text-xl font-semibold text-gray-100">Drift Events</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            All detected quality degradation events for your AI
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-semibold text-gray-100">Drift Events</h1>
+            <p className="text-sm text-gray-500 mt-0.5">
+              All detected quality degradation events for your AI
+            </p>
+          </div>
+          {business && (
+            <ExportButtons
+              tier={business.subscriptionTier}
+              filenameBase="tryda-drift-events"
+              sheetName="Drift Events"
+              rows={events.map((e) => ({
+                id: e.id,
+                detectedAt: e.detectedAt,
+                severity: e.severity,
+                rootCause: e.rootCause,
+                affectedMetric: e.affectedMetric,
+                baselineScore: e.baselineScore,
+                currentScore: e.currentScore,
+                dropPercentage: e.dropPercentage,
+                resolved: e.resolved,
+                resolvedAt: e.resolvedAt ?? '',
+              }))}
+            />
+          )}
         </div>
 
         {(authLoading || !user || loading) && <p className="text-sm text-gray-500">Loading...</p>}
