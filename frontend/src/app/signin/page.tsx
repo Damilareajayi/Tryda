@@ -1,8 +1,8 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { signInWithEmailAndPassword, signInWithRedirect, getRedirectResult } from 'firebase/auth';
+import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider } from '@/lib/firebase';
 import { provisionAccount } from '@/lib/api';
 import { Logo } from '@/components/Logo';
@@ -24,26 +24,6 @@ export default function SigninPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<'email' | 'google' | null>(null);
-  const [resumingRedirect, setResumingRedirect] = useState(true);
-
-  // Completes the flow after Google redirects back here (signInWithRedirect
-  // navigates the whole page away and back — no component state survives).
-  useEffect(() => {
-    getRedirectResult(auth)
-      .then(async (result) => {
-        if (!result) return;
-        const { created } = await provisionAccount();
-        if (created) {
-          await auth.signOut();
-          setError(friendlyError({ code: 'no-account' }));
-          return;
-        }
-        router.push('/dashboard');
-      })
-      .catch((err) => setError(friendlyError(err)))
-      .finally(() => setResumingRedirect(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   async function handleEmailSignin(e: React.FormEvent) {
     e.preventDefault();
@@ -61,15 +41,27 @@ export default function SigninPage() {
 
   async function handleGoogleSignin() {
     setError(null);
-    await signInWithRedirect(auth, googleProvider);
-  }
-
-  if (resumingRedirect) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-sm text-gray-500">Signing in...</p>
-      </div>
-    );
+    setLoading('google');
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (err: any) {
+      setError(friendlyError(err));
+      setLoading(null);
+      return;
+    }
+    try {
+      const { created } = await provisionAccount();
+      if (created) {
+        await auth.signOut();
+        setError(friendlyError({ code: 'no-account' }));
+        setLoading(null);
+        return;
+      }
+      router.push('/dashboard');
+    } catch (err: any) {
+      setError(friendlyError(err));
+      setLoading(null);
+    }
   }
 
   return (
@@ -128,7 +120,7 @@ export default function SigninPage() {
             className="btn-ghost w-full border border-surface-border flex items-center justify-center gap-2"
           >
             <GoogleIcon />
-            Continue with Google
+            {loading === 'google' ? 'Signing in...' : 'Continue with Google'}
           </button>
         </form>
 

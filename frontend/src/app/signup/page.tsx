@@ -1,8 +1,8 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { createUserWithEmailAndPassword, signInWithRedirect, getRedirectResult } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider } from '@/lib/firebase';
 import { provisionAccount } from '@/lib/api';
 import { Logo } from '@/components/Logo';
@@ -11,8 +11,6 @@ const INDUSTRIES = [
   'E-commerce', 'SaaS', 'Healthcare', 'Finance', 'Education',
   'Real Estate', 'Travel', 'Legal', 'Customer Support', 'Other',
 ];
-
-const PENDING_PROFILE_KEY = 'tryda_pending_signup_profile';
 
 function friendlyError(err: any): string {
   const code = err?.code || '';
@@ -32,45 +30,12 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<'email' | 'google' | null>(null);
-  const [resumingRedirect, setResumingRedirect] = useState(true);
   // Set once a Google sign-in has succeeded but the account has no business
   // record yet — we still need the profile fields, just after auth instead
   // of gating the "Continue with Google" button behind them.
   const [needsProfile, setNeedsProfile] = useState(false);
 
   const profileComplete = Boolean(name.trim() && industry && aiToolDescription.trim());
-
-  // Completes the flow after Google redirects back here (signInWithRedirect
-  // navigates the whole page away and back — form state doesn't survive that,
-  // so any profile fields typed beforehand were stashed in sessionStorage).
-  useEffect(() => {
-    getRedirectResult(auth)
-      .then(async (result) => {
-        if (!result) return;
-        const stored = sessionStorage.getItem(PENDING_PROFILE_KEY);
-        sessionStorage.removeItem(PENDING_PROFILE_KEY);
-        const parsed = stored ? JSON.parse(stored) : {};
-
-        try {
-          await provisionAccount(parsed);
-          router.push('/dashboard');
-        } catch (err: any) {
-          if (err?.status === 400) {
-            // New Google account, no business yet — collect the missing
-            // details now instead of before auth.
-            if (parsed.name) setName(parsed.name);
-            if (parsed.industry) setIndustry(parsed.industry);
-            if (parsed.aiToolDescription) setAiToolDescription(parsed.aiToolDescription);
-            setNeedsProfile(true);
-          } else {
-            setError(friendlyError(err));
-          }
-        }
-      })
-      .catch((err) => setError(friendlyError(err)))
-      .finally(() => setResumingRedirect(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   async function handleEmailSignup(e: React.FormEvent) {
     e.preventDefault();
@@ -93,11 +58,27 @@ export default function SignupPage() {
   async function handleGoogleSignup() {
     setError(null);
     setLoading('google');
-    sessionStorage.setItem(
-      PENDING_PROFILE_KEY,
-      JSON.stringify({ name: name.trim(), industry, aiToolDescription: aiToolDescription.trim() })
-    );
-    await signInWithRedirect(auth, googleProvider);
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (err: any) {
+      setError(friendlyError(err));
+      setLoading(null);
+      return;
+    }
+    try {
+      await provisionAccount({ name: name.trim(), industry, aiToolDescription: aiToolDescription.trim() });
+      router.push('/dashboard');
+    } catch (err: any) {
+      if (err?.status === 400) {
+        // New Google account, no business yet — collect the missing
+        // details now instead of before auth.
+        setNeedsProfile(true);
+        setLoading(null);
+      } else {
+        setError(friendlyError(err));
+        setLoading(null);
+      }
+    }
   }
 
   async function handleCompleteProfile(e: React.FormEvent) {
@@ -115,14 +96,6 @@ export default function SignupPage() {
       setError(friendlyError(err));
       setLoading(null);
     }
-  }
-
-  if (resumingRedirect) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-sm text-gray-500">Signing in...</p>
-      </div>
-    );
   }
 
   return (
@@ -242,7 +215,7 @@ export default function SignupPage() {
               className="btn-ghost w-full border border-surface-border flex items-center justify-center gap-2"
             >
               <GoogleIcon />
-              {loading === 'google' ? 'Redirecting...' : 'Continue with Google'}
+              {loading === 'google' ? 'Signing in...' : 'Continue with Google'}
             </button>
           </form>
         )}
