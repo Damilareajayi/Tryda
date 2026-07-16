@@ -103,11 +103,13 @@ export default function SignupPage() {
       <div className="hidden lg:flex lg:w-1/2 items-center justify-center relative overflow-hidden bg-navy-800/40 border-r border-surface-border p-12">
         <div className="absolute w-96 h-96 bg-teal/10 rounded-full blur-[100px]" />
         <div className="relative text-center max-w-sm">
-          <img
-            src="/brand/mascot/tryda-mascot-dashboard.png"
-            alt="Tryda mascot"
-            className="w-64 mx-auto rounded-2xl border border-surface-border shadow-card animate-fade-in -scale-x-100"
-          />
+          <Link href="/">
+            <img
+              src="/brand/mascot/tryda-mascot-dashboard.png"
+              alt="Tryda mascot"
+              className="w-64 mx-auto rounded-2xl border border-surface-border shadow-card animate-fade-in -scale-x-100"
+            />
+          </Link>
           <p className="text-lg font-semibold text-gray-100 mt-6">Your AI's reliability co-pilot</p>
           <p className="text-sm text-gray-500 mt-2">
             Tryda catches quality drift before your customers ever notice — set up monitoring in minutes.
@@ -118,7 +120,7 @@ export default function SignupPage() {
       <div className="flex-1 flex items-center justify-center p-6">
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-8">
-          <Logo size={48} />
+          <Link href="/"><Logo size={48} /></Link>
           <h1 className="text-xl font-semibold text-gray-100 mt-4">
             {needsProfile ? 'One more step' : 'Create your account'}
           </h1>

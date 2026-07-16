@@ -75,10 +75,10 @@ export default function LandingPage() {
       {/* Nav */}
       <header className="border-b border-surface-border">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
+          <Link href="/" className="flex items-center gap-2.5">
             <Logo size={28} />
             <span className="font-bold text-lg text-white tracking-tight">Tryda</span>
-          </div>
+          </Link>
           <div className="flex items-center gap-3">
             <Link href="/signin" className="btn-ghost text-sm">Sign In</Link>
             <Link href="/signup" className="btn-primary text-sm">Get Started</Link>
@@ -109,11 +109,13 @@ export default function LandingPage() {
 
           <div className="relative flex justify-center lg:justify-end">
             <div className="absolute w-80 h-80 sm:w-[28rem] sm:h-[28rem] bg-teal/15 rounded-full blur-[90px]" />
-            <img
-              src="/brand/mascot/tryda-mascot-standing.png"
-              alt="Tryda mascot"
-              className="relative w-full max-w-xs sm:max-w-sm rounded-2xl border border-surface-border shadow-card animate-fade-in"
-            />
+            <Link href="/" className="relative">
+              <img
+                src="/brand/mascot/tryda-mascot-standing.png"
+                alt="Tryda mascot"
+                className="w-full max-w-xs sm:max-w-sm rounded-2xl border border-surface-border shadow-card animate-fade-in"
+              />
+            </Link>
           </div>
         </div>
       </section>
@@ -197,10 +199,10 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="border-t border-surface-border">
         <div className="max-w-6xl mx-auto px-6 py-8 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2">
             <Logo size={20} />
             <span className="text-sm text-gray-500">Tryda</span>
-          </div>
+          </Link>
           <p className="text-xs text-gray-600">© {new Date().getFullYear()} Tryda. All rights reserved.</p>
         </div>
       </footer>

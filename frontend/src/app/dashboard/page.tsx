@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { TrendingUp, TrendingDown, Minus, MessageSquare, AlertTriangle, Lightbulb } from 'lucide-react';
 import { Sidebar } from '@/components/Sidebar';
 import { HealthScoreRing } from '@/components/HealthScoreRing';
@@ -85,11 +86,13 @@ export default function DashboardPage() {
         <Sidebar />
         <main className="ml-56 flex-1 p-6 flex items-center justify-center">
           <div className="card text-center py-12 px-10 max-w-md">
-            <img
-              src="/brand/mascot/tryda-mascot-sitting-orb.png"
-              alt=""
-              className="w-28 mx-auto mb-4 opacity-90"
-            />
+            <Link href="/">
+              <img
+                src="/brand/mascot/tryda-mascot-sitting-orb.png"
+                alt=""
+                className="w-28 mx-auto mb-4 opacity-90"
+              />
+            </Link>
             <p className="text-gray-300 font-medium">{error || 'No data yet'}</p>
             <p className="text-sm text-gray-500 mt-1">
               Visit the Connect page to set up your API key, then send some conversation logs.
