@@ -1,13 +1,36 @@
+import { onAuthStateChanged, type User } from 'firebase/auth';
 import { PerformanceReport, DriftEvent, Recommendation, BusinessProfile, SubscriptionTier } from '@/types';
 import { auth } from './firebase';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
+// Right after signInWithPopup/signInWithRedirect resolves, auth.currentUser
+// can momentarily still be null — the SDK finishes committing it a tick
+// later. Callers that fire an authenticated request immediately after
+// sign-in (Google auth's provisionAccount call) would otherwise fail with
+// a bare "Not signed in" before the user ever gets a token. Wait one auth
+// state tick instead of assuming currentUser is already set.
+function waitForCurrentUser(): Promise<User | null> {
+  if (auth.currentUser) return Promise.resolve(auth.currentUser);
+  return new Promise((resolve) => {
+    const timeout = setTimeout(() => {
+      unsubscribe();
+      resolve(auth.currentUser);
+    }, 5000);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      clearTimeout(timeout);
+      unsubscribe();
+      resolve(user);
+    });
+  });
+}
+
 // Dashboard-facing endpoints authenticate the logged-in user via their
 // Firebase ID token — distinct from the long-lived x-api-key used by
 // customers' AI tools to POST /ingest (see ingestLogs below).
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
-  const token = await auth.currentUser?.getIdToken();
+  const user = auth.currentUser ?? (await waitForCurrentUser());
+  const token = await user?.getIdToken();
   if (!token) throw new Error('Not signed in');
 
   const res = await fetch(`${API_URL}/api${path}`, {
