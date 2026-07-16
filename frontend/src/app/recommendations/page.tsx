@@ -4,18 +4,21 @@ import { Sidebar } from '@/components/Sidebar';
 import { RecommendationCard } from '@/components/RecommendationCard';
 import { fetchRecommendations, applyRecommendation } from '@/lib/api';
 import { Recommendation } from '@/types';
+import { useRequireAuth } from '@/lib/useRequireAuth';
 
 export default function RecommendationsPage() {
+  const { user, loading: authLoading } = useRequireAuth();
   const [recs, setRecs] = useState<Recommendation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!user) return;
     fetchRecommendations()
       .then(setRecs)
       .catch(() => setError('Could not load recommendations from the Tryda API.'))
       .finally(() => setLoading(false));
-  }, []);
+  }, [user]);
 
   function handleApply(id: string) {
     setRecs((prev) =>
@@ -42,7 +45,7 @@ export default function RecommendationsPage() {
           </p>
         </div>
 
-        {loading && <p className="text-sm text-gray-500">Loading...</p>}
+        {(authLoading || !user || loading) && <p className="text-sm text-gray-500">Loading...</p>}
         {error && <p className="text-sm text-status-critical">{error}</p>}
 
         {!loading && !error && open.length > 0 && (

@@ -75,6 +75,7 @@ export interface BusinessProfile {
   name: string;
   industry: string;
   aiToolDescription: string;
+  apiKey: string;
   subscriptionTier: SubscriptionTier;
   monthlyConversationLimit: number;
   currentMonthCount: number;

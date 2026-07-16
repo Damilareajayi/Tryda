@@ -2,10 +2,12 @@ import { Router, Request, Response } from 'express';
 import { getFirestore } from 'firebase-admin/firestore';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
+import { v4 as uuid } from 'uuid';
 import { runMonitoringPipeline } from '../services/monitoringPipeline';
 import { runReportingEngine } from '../agents/reportingEngine';
 import { ConversationLog, Business } from '../types';
 import { stripe, TIER_PRICE_IDS, TIER_CONVERSATION_LIMITS } from '../services/stripeClient';
+import { authenticateUser, requireBusiness } from '../middleware/auth';
 
 const router = Router();
 
@@ -86,11 +88,69 @@ router.post(
   }
 );
 
+// ── POST /auth/provision — ensure a Business exists for the logged-in user ──
+// Called right after Firebase sign-up/sign-in. Idempotent: if a Business
+// already exists for this uid, returns it as-is; otherwise creates one from
+// the supplied profile fields (required for first-time sign-up).
+const ProvisionSchema = z.object({
+  name: z.string().min(1).max(200).optional(),
+  industry: z.string().min(1).max(100).optional(),
+  aiToolDescription: z.string().min(1).max(500).optional(),
+});
+
+router.post(
+  '/auth/provision',
+  generalLimiter,
+  authenticateUser,
+  async (req: Request, res: Response) => {
+    const existing = (req as any).business as Business | undefined;
+    if (existing) {
+      return res.json({ business: existing, created: false });
+    }
+
+    try {
+      const { name, industry, aiToolDescription } = ProvisionSchema.parse(req.body);
+      if (!name || !industry || !aiToolDescription) {
+        return res.status(400).json({
+          error: 'name, industry, and aiToolDescription are required to create a new account',
+        });
+      }
+
+      const uid = (req as any).uid as string;
+      const email = (req as any).userEmail as string;
+
+      const business: Business = {
+        id: uuid(),
+        uid,
+        name,
+        email: email || '',
+        industry,
+        aiToolDescription,
+        apiKey: `dl_live_${uuid().replace(/-/g, '')}`,
+        createdAt: new Date().toISOString(),
+        subscriptionTier: 'free',
+        monthlyConversationLimit: 100,
+        currentMonthCount: 0,
+      };
+
+      await getFirestore().collection('businesses').doc(business.id).set(business);
+      return res.json({ business, created: true });
+    } catch (err: any) {
+      if (err.name === 'ZodError') {
+        return res.status(400).json({ error: 'Invalid payload', details: err.errors });
+      }
+      console.error('Provision error:', err);
+      return res.status(500).json({ error: 'Could not provision account' });
+    }
+  }
+);
+
 // ── GET /business — Current business profile + subscription info ───────────
 router.get(
   '/business',
   generalLimiter,
-  authenticateBusiness,
+  authenticateUser,
+  requireBusiness,
   async (req: Request, res: Response) => {
     const business = (req as any).business as Business;
     return res.json({
@@ -98,6 +158,7 @@ router.get(
       name: business.name,
       industry: business.industry,
       aiToolDescription: business.aiToolDescription,
+      apiKey: business.apiKey,
       subscriptionTier: business.subscriptionTier,
       monthlyConversationLimit: business.monthlyConversationLimit,
       currentMonthCount: business.currentMonthCount,
@@ -110,7 +171,8 @@ router.get(
 router.get(
   '/report',
   aiLimiter,
-  authenticateBusiness,
+  authenticateUser,
+  requireBusiness,
   async (req: Request, res: Response) => {
     try {
       const business = (req as any).business as Business;
@@ -128,7 +190,8 @@ router.get(
 router.get(
   '/drift-events',
   generalLimiter,
-  authenticateBusiness,
+  authenticateUser,
+  requireBusiness,
   async (req: Request, res: Response) => {
     try {
       const business = (req as any).business as Business;
@@ -153,7 +216,8 @@ router.get(
 router.get(
   '/recommendations',
   generalLimiter,
-  authenticateBusiness,
+  authenticateUser,
+  requireBusiness,
   async (req: Request, res: Response) => {
     try {
       const business = (req as any).business as Business;
@@ -179,7 +243,8 @@ router.get(
 router.patch(
   '/recommendations/:id/apply',
   generalLimiter,
-  authenticateBusiness,
+  authenticateUser,
+  requireBusiness,
   async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
@@ -203,7 +268,8 @@ const CheckoutSchema = z.object({
 router.post(
   '/billing/create-checkout-session',
   generalLimiter,
-  authenticateBusiness,
+  authenticateUser,
+  requireBusiness,
   async (req: Request, res: Response) => {
     try {
       const { tier } = CheckoutSchema.parse(req.body);
@@ -247,7 +313,8 @@ router.post(
 router.post(
   '/billing/create-portal-session',
   generalLimiter,
-  authenticateBusiness,
+  authenticateUser,
+  requireBusiness,
   async (req: Request, res: Response) => {
     try {
       const business = (req as any).business as Business;
@@ -277,7 +344,8 @@ router.post(
 router.get(
   '/billing/verify-session',
   generalLimiter,
-  authenticateBusiness,
+  authenticateUser,
+  requireBusiness,
   async (req: Request, res: Response) => {
     try {
       const business = (req as any).business as Business;

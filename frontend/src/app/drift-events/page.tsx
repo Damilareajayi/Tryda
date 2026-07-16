@@ -4,18 +4,21 @@ import { Sidebar } from '@/components/Sidebar';
 import { DriftEventCard } from '@/components/DriftEventCard';
 import { fetchDriftEvents } from '@/lib/api';
 import { DriftEvent } from '@/types';
+import { useRequireAuth } from '@/lib/useRequireAuth';
 
 export default function DriftEventsPage() {
+  const { user, loading: authLoading } = useRequireAuth();
   const [events, setEvents] = useState<DriftEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!user) return;
     fetchDriftEvents()
       .then(setEvents)
       .catch(() => setError('Could not load drift events from the Tryda API.'))
       .finally(() => setLoading(false));
-  }, []);
+  }, [user]);
 
   const open = events.filter((e) => !e.resolved);
   const resolved = events.filter((e) => e.resolved);
@@ -31,7 +34,7 @@ export default function DriftEventsPage() {
           </p>
         </div>
 
-        {loading && <p className="text-sm text-gray-500">Loading...</p>}
+        {(authLoading || !user || loading) && <p className="text-sm text-gray-500">Loading...</p>}
         {error && <p className="text-sm text-status-critical">{error}</p>}
 
         {!loading && !error && open.length > 0 && (

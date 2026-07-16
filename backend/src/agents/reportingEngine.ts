@@ -159,13 +159,16 @@ export async function runReportingEngine(
 
   try {
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-    const result = await model.generateContent(HIGHLIGHTS_PROMPT(reportBase));
+    const result = await Promise.race([
+      model.generateContent(HIGHLIGHTS_PROMPT(reportBase)),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Highlights generation timed out')), 5000)),
+    ]);
     const text = result.response.text().trim();
     const clean = text.replace(/```json|```/g, '').trim();
     highlights = JSON.parse(clean);
   } catch (err) {
     console.error('Highlights generation failed:', err);
-    // Keep fallback highlights
+    // Keep fallback highlights — the report still returns promptly
   }
 
   return { ...reportBase, highlights };

@@ -1,40 +1,21 @@
 <svg viewBox="0 0 300 280" xmlns="http://www.w3.org/2000/svg">
+  
   <defs>
-    <linearGradient id="sTop" x1="0" y1="0" x2="0" y2="1">
+    <linearGradient id="sGem" x1="1" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#4ECDC4"/>
-      <stop offset="100%" stop-color="#1A7A8A"/>
-    </linearGradient>
-    <linearGradient id="sBody" x1="0" y1="0" x2="0.3" y2="1">
-      <stop offset="0%" stop-color="#2AAFBD"/>
+      <stop offset="55%" stop-color="#2AAFBD"/>
       <stop offset="100%" stop-color="#0F4F6A"/>
-    </linearGradient>
-    <linearGradient id="sWord" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#1A5F7A"/>
-      <stop offset="100%" stop-color="#2AAFBD"/>
-    </linearGradient>
-  </defs>
-
-  <!-- Gem centered at 150 -->
-  <polygon points="150,20 196,54 104,54" fill="url(#sTop)"/>
-  <polygon points="104,54 150,20 127,54" fill="#1A7A8A" opacity="0.85"/>
-  <polygon points="150,20 196,54 173,54" fill="#4ECDC4" opacity="0.75"/>
-  <polygon points="100,62 200,62 150,162" fill="url(#sBody)"/>
-  <polygon points="100,62 150,162 125,62" fill="#145374" opacity="0.85"/>
-  <polygon points="200,62 150,162 175,62" fill="#3DBDBD" opacity="0.6"/>
-  <line x1="150" y1="62" x2="150" y2="162" stroke="#0F4F6A" stroke-width="1" opacity="0.35"/>
-  <!-- TT mark -->
-  <rect x="124" y="28" width="52" height="8" rx="2" fill="white" opacity="0.95"/>
-  <rect x="133" y="28" width="10" height="26" rx="1.5" fill="white" opacity="0.95"/>
-  <rect x="157" y="28" width="10" height="26" rx="1.5" fill="white" opacity="0.95"/>
-
-  <!-- Divider -->
-  <line x1="115" y1="180" x2="185" y2="180" stroke="#C8E6EA" stroke-width="1"/>
-
-  <!-- Tryda wordmark -->
-  <text x="150" y="240"
-    text-anchor="middle"
-    font-family="'Trebuchet MS', 'Gill Sans MT', 'Century Gothic', sans-serif"
-    font-size="54" font-weight="700"
-    letter-spacing="2"
-    fill="url(#sWord)">Tryda</text>
+    </linearGradient></defs>
+  <g transform="translate(72.50,27.85)scale(1.55)">
+    <!-- gem / shield silhouette -->
+    <path d="M28,10 L72,10 L92,42 L50,96 L8,42 Z" fill="url(#sGem)"/>
+    <!-- integrated T monogram -->
+    <rect x="36" y="29" width="32" height="6" rx="3" fill="#FFFFFF"/>
+    <rect x="49" y="29" width="6" height="38" rx="3" fill="#FFFFFF"/>
+    <path d="M52,64 C38,64 36,83 52,82 C63,81 60,66 52,64 Z" fill="#FFFFFF"/></g>
+  <line x1="115" y1="188" x2="185" y2="188" stroke="#C8E6EA" stroke-width="1"/>
+  <text x="150" y="244" text-anchor="middle"
+      font-family="'Trebuchet MS', 'Gill Sans MT', 'Century Gothic', sans-serif"
+      font-size="50" font-weight="700" letter-spacing="2"
+      fill="#0F4F6A">TRYDA</text>
 </svg>

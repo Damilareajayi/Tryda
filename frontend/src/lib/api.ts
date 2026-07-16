@@ -1,4 +1,5 @@
 import { PerformanceReport, DriftEvent, Recommendation, BusinessProfile, SubscriptionTier } from '@/types';
+import { auth } from './firebase';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
@@ -9,17 +10,34 @@ function getApiKey(): string {
   return '';
 }
 
+// Dashboard-facing endpoints authenticate the logged-in user via their
+// Firebase ID token — distinct from the long-lived x-api-key used by
+// customers' AI tools to POST /ingest (see ingestLogs below).
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
+  const token = await auth.currentUser?.getIdToken();
+  if (!token) throw new Error('Not signed in');
+
   const res = await fetch(`${API_URL}/api${path}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': getApiKey(),
+      Authorization: `Bearer ${token}`,
       ...options?.headers,
     },
   });
   if (!res.ok) throw new Error(`API error: ${res.status}`);
   return res.json();
+}
+
+export async function provisionAccount(profile?: {
+  name: string;
+  industry: string;
+  aiToolDescription: string;
+}): Promise<{ business: BusinessProfile; created: boolean }> {
+  return apiFetch('/auth/provision', {
+    method: 'POST',
+    body: JSON.stringify(profile || {}),
+  });
 }
 
 export async function fetchReport(days = 7): Promise<PerformanceReport> {
@@ -38,11 +56,16 @@ export async function applyRecommendation(id: string): Promise<void> {
   return apiFetch(`/recommendations/${id}/apply`, { method: 'PATCH' });
 }
 
+// Uses the business's long-lived x-api-key, not the logged-in user's
+// session — this is the same call an external AI tool would make.
 export async function ingestLogs(logs: unknown[]): Promise<unknown> {
-  return apiFetch('/ingest', {
+  const res = await fetch(`${API_URL}/api/ingest`, {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-api-key': getApiKey() },
     body: JSON.stringify({ logs }),
   });
+  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  return res.json();
 }
 
 export async function fetchBusiness(): Promise<BusinessProfile> {

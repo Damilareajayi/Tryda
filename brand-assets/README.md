@@ -12,15 +12,15 @@ brand-assets/
 
 | File | Description |
 |---|---|
-| `tryda-gem-only.svg` | Diamond gem mark — transparent background |
-| `tryda-gem-dark.svg` | Diamond gem mark — navy background |
-| `tryda-favicon.svg` | Gem mark formatted for browser favicon |
-| `tryda-wordmark.svg` | "Tryda" logotype — light background |
-| `tryda-wordmark-dark.svg` | "Tryda" logotype — dark background |
-| `tryda-stacked-light.svg` | Gem above Tryda — light background |
-| `tryda-stacked-dark.svg` | Gem above Tryda — dark background |
-| `tryda-horizontal-light.svg` | Gem left + Tryda right — light background |
-| `tryda-horizontal-dark.svg` | Gem left + Tryda right — dark background |
+| `tryda-gem-only.svg` | Gem/shield diamond with integrated "T" monogram — transparent background |
+| `tryda-gem-dark.svg` | Mark — navy background |
+| `tryda-favicon.svg` | Mark simplified for browser favicon |
+| `tryda-wordmark.svg` | "TRYDA" logotype — light background |
+| `tryda-wordmark-dark.svg` | "TRYDA" logotype — dark background |
+| `tryda-stacked-light.svg` | Mark above TRYDA — light background |
+| `tryda-stacked-dark.svg` | Mark above TRYDA — dark background |
+| `tryda-horizontal-light.svg` | Mark left + TRYDA right — light background |
+| `tryda-horizontal-dark.svg` | Mark left + TRYDA right — dark background |
 | `tryda-app-mockup.svg` | Full dashboard mockup with brand in context |
 
 ## PNG Files (use for social, email, decks)
@@ -47,12 +47,12 @@ brand-assets/
 
 | Name | Hex | Use |
 |---|---|---|
-| Teal Light | `#4ECDC4` | Gem highlight, accents |
+| Teal Light | `#4ECDC4` | Mark highlight, accents |
 | Teal Mid | `#2AAFBD` | Primary brand teal |
-| Teal Dark | `#1A7A8A` | Gem body, hover states |
-| Navy Deep | `#0F4F6A` | Gem base, text on light |
+| Teal Dark | `#1A7A8A` | Mark body, hover states |
+| Navy Deep | `#0F4F6A` | Mark base, text on light |
 | Navy App | `#0A1628` | App background |
-| White | `#FFFFFF` | TT mark, text on dark |
+| White | `#FFFFFF` | T monogram, text on dark |
 
 ## Typography
 

@@ -1,28 +1,15 @@
 <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="fgTop" x1="0" y1="0" x2="0" y2="1">
+    <linearGradient id="fGem" x1="1" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#4ECDC4"/>
-      <stop offset="100%" stop-color="#1A7A8A"/>
-    </linearGradient>
-    <linearGradient id="fgBody" x1="0" y1="0" x2="0.3" y2="1">
-      <stop offset="0%" stop-color="#2AAFBD"/>
+      <stop offset="55%" stop-color="#2AAFBD"/>
       <stop offset="100%" stop-color="#0F4F6A"/>
-    </linearGradient>
-  </defs>
-  <!-- Top bevel -->
-  <polygon points="32,8 46,20 18,20" fill="url(#fgTop)"/>
-  <!-- Left bevel -->
-  <polygon points="18,20 32,8 25,20" fill="#1A7A8A" opacity="0.85"/>
-  <!-- Right bevel -->
-  <polygon points="32,8 46,20 39,20" fill="#4ECDC4" opacity="0.75"/>
-  <!-- Body -->
-  <polygon points="16,23 48,23 32,55" fill="url(#fgBody)"/>
-  <!-- Left facet -->
-  <polygon points="16,23 32,55 24,23" fill="#145374" opacity="0.85"/>
-  <!-- Right facet -->
-  <polygon points="48,23 32,55 40,23" fill="#3DBDBD" opacity="0.6"/>
-  <!-- TT mark -->
-  <rect x="22" y="10" width="20" height="4" rx="1" fill="white" opacity="0.95"/>
-  <rect x="25" y="10" width="5" height="10" rx="1" fill="white" opacity="0.95"/>
-  <rect x="34" y="10" width="5" height="10" rx="1" fill="white" opacity="0.95"/>
+    </linearGradient></defs>
+  <g transform="translate(-2.00,-4.04)scale(0.68)">
+    <!-- gem / shield silhouette -->
+    <path d="M28,10 L72,10 L92,42 L50,96 L8,42 Z" fill="url(#fGem)"/>
+    <!-- integrated T monogram -->
+    <rect x="36" y="29" width="32" height="6" rx="3" fill="#FFFFFF"/>
+    <rect x="49" y="29" width="6" height="38" rx="3" fill="#FFFFFF"/>
+    <path d="M52,64 C38,64 36,83 52,82 C63,81 60,66 52,64 Z" fill="#FFFFFF"/></g>
 </svg>

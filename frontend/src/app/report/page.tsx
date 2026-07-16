@@ -7,20 +7,23 @@ import { PerformanceReport } from '@/types';
 import { rootCauseLabel, formatDate } from '@/lib/utils';
 import { TrendingDown, TrendingUp, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useRequireAuth } from '@/lib/useRequireAuth';
 
 export default function ReportPage() {
+  const { user, loading: authLoading } = useRequireAuth();
   const [report, setReport] = useState<PerformanceReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!user) return;
     fetchReport(7)
       .then(setReport)
       .catch(() => setError('Could not load the report from the Tryda API.'))
       .finally(() => setLoading(false));
-  }, []);
+  }, [user]);
 
-  if (loading) {
+  if (authLoading || !user || loading) {
     return (
       <div className="flex min-h-screen">
         <Sidebar />

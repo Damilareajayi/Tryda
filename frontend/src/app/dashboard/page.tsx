@@ -10,6 +10,7 @@ import { fetchReport, fetchDriftEvents, fetchRecommendations } from '@/lib/api';
 import { scoreToStatus } from '@/lib/utils';
 import { PerformanceReport, DriftEvent, Recommendation } from '@/types';
 import { cn } from '@/lib/utils';
+import { useRequireAuth } from '@/lib/useRequireAuth';
 
 function StatCard({
   label, value, icon: Icon, sub, highlight,
@@ -48,6 +49,7 @@ function TrendBadge({ trend, pct }: { trend: string; pct: number }) {
 }
 
 export default function DashboardPage() {
+  const { user, loading: authLoading } = useRequireAuth();
   const [report, setReport] = useState<PerformanceReport | null>(null);
   const [driftEvents, setDriftEvents] = useState<DriftEvent[]>([]);
   const [recs, setRecs] = useState<Recommendation[]>([]);
@@ -55,17 +57,18 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!user) return;
     Promise.all([fetchReport(7), fetchDriftEvents(), fetchRecommendations()])
       .then(([r, d, rec]) => {
         setReport(r);
         setDriftEvents(d);
         setRecs(rec);
       })
-      .catch(() => setError('Could not load data from the Tryda API. Make sure your API key is connected.'))
+      .catch(() => setError('Could not load data from the Tryda API.'))
       .finally(() => setLoading(false));
-  }, []);
+  }, [user]);
 
-  if (loading) {
+  if (authLoading || !user || loading) {
     return (
       <div className="flex min-h-screen">
         <Sidebar />

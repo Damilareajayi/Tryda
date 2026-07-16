@@ -1,11 +1,8 @@
 <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="mTop" x1="0" y1="0" x2="0" y2="1">
+    <linearGradient id="amGem" x1="1" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#4ECDC4"/>
-      <stop offset="100%" stop-color="#1A7A8A"/>
-    </linearGradient>
-    <linearGradient id="mBody" x1="0" y1="0" x2="0.3" y2="1">
-      <stop offset="0%" stop-color="#2AAFBD"/>
+      <stop offset="55%" stop-color="#2AAFBD"/>
       <stop offset="100%" stop-color="#0F4F6A"/>
     </linearGradient>
   </defs>
@@ -21,16 +18,14 @@
   <rect x="0" y="0" width="200" height="72" fill="#0F1F38"/>
   <line x1="0" y1="72" x2="200" y2="72" stroke="#1F2D40" stroke-width="1"/>
 
-  <!-- Gem mark in sidebar (small) -->
-  <polygon points="28,18 42,28 14,28" fill="url(#mTop)"/>
-  <polygon points="14,28 28,18 21,28" fill="#1A7A8A" opacity="0.85"/>
-  <polygon points="28,18 42,28 35,28" fill="#4ECDC4" opacity="0.75"/>
-  <polygon points="12,31 44,31 28,58" fill="url(#mBody)"/>
-  <polygon points="12,31 28,58 20,31" fill="#145374" opacity="0.85"/>
-  <polygon points="44,31 28,58 36,31" fill="#3DBDBD" opacity="0.6"/>
-  <rect x="18" y="21" width="20" height="4" rx="1" fill="white" opacity="0.95"/>
-  <rect x="21" y="21" width="5" height="10" rx="1" fill="white" opacity="0.95"/>
-  <rect x="30" y="21" width="5" height="10" rx="1" fill="white" opacity="0.95"/>
+  <!-- Icon mark in sidebar (small) -->
+  <g transform="translate(7.00,15.74)scale(0.42)">
+    <!-- gem / shield silhouette -->
+    <path d="M28,10 L72,10 L92,42 L50,96 L8,42 Z" fill="url(#amGem)"/>
+    <!-- integrated T monogram -->
+    <rect x="36" y="29" width="32" height="6" rx="3" fill="#FFFFFF"/>
+    <rect x="49" y="29" width="6" height="38" rx="3" fill="#FFFFFF"/>
+    <path d="M52,64 C38,64 36,83 52,82 C63,81 60,66 52,64 Z" fill="#FFFFFF"/></g>
 
   <!-- Tryda brand name in sidebar -->
   <text x="53" y="43"

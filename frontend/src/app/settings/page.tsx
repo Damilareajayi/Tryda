@@ -1,9 +1,11 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/Sidebar';
 import { fetchBusiness, createCheckoutSession, createPortalSession, verifyCheckoutSession } from '@/lib/api';
 import { BusinessProfile, SubscriptionTier } from '@/types';
+import { useRequireAuth } from '@/lib/useRequireAuth';
+import { useAuth } from '@/lib/auth-context';
 
 const PLAN_LABELS: Record<SubscriptionTier, string> = {
   free: 'Free Plan',
@@ -19,6 +21,9 @@ const UPGRADE_OPTIONS: Array<{ tier: SubscriptionTier; label: string; price: str
 ];
 
 export default function SettingsPage() {
+  const { user, loading: authLoading } = useRequireAuth();
+  const { signOut } = useAuth();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [business, setBusiness] = useState<BusinessProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -26,7 +31,13 @@ export default function SettingsPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [checkoutNotice, setCheckoutNotice] = useState<string | null>(null);
 
+  async function handleSignOut() {
+    await signOut();
+    router.push('/signin');
+  }
+
   useEffect(() => {
+    if (!user) return;
     async function load() {
       const sessionId = searchParams.get('session_id');
       const checkout = searchParams.get('checkout');
@@ -56,7 +67,7 @@ export default function SettingsPage() {
     }
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user]);
 
   async function handleUpgrade(tier: SubscriptionTier) {
     setActionLoading(tier);
@@ -95,7 +106,7 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {loading && <p className="text-sm text-gray-500">Loading...</p>}
+        {(authLoading || !user || loading) && <p className="text-sm text-gray-500">Loading...</p>}
         {error && <p className="text-sm text-status-critical">{error}</p>}
 
         {!loading && business && (
@@ -170,6 +181,16 @@ export default function SettingsPage() {
                   ))}
                 </div>
               )}
+            </div>
+
+            <div className="card flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-200">Signed in as</p>
+                <p className="text-xs text-gray-500 mt-0.5">{user?.email}</p>
+              </div>
+              <button className="btn-ghost text-xs border border-surface-border" onClick={handleSignOut}>
+                Sign out
+              </button>
             </div>
           </>
         )}

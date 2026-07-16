@@ -2,16 +2,18 @@
 import { useEffect, useState } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { Copy, CheckCircle, ExternalLink } from 'lucide-react';
+import { fetchBusiness } from '@/lib/api';
+import { useRequireAuth } from '@/lib/useRequireAuth';
 
-const DEMO_API_KEY = process.env.NEXT_PUBLIC_DEMO_API_KEY || 'dl_live_demo_a1b2c3d4e5f6';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
-const CODE_SNIPPET = `// Send your AI conversation logs to Tryda
+function codeSnippet(apiKey: string) {
+  return `// Send your AI conversation logs to Tryda
 const response = await fetch('${API_URL}/api/ingest', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
-    'x-api-key': '${DEMO_API_KEY}'
+    'x-api-key': '${apiKey}'
   },
   body: JSON.stringify({
     logs: [{
@@ -23,19 +25,50 @@ const response = await fetch('${API_URL}/api/ingest', {
     }]
   })
 });`;
+}
 
 export default function ConnectPage() {
-  const [copied, setCopied] = useState(false);
+  const { user, loading: authLoading } = useRequireAuth();
+  const [apiKey, setApiKey] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState<'key' | 'snippet' | null>(null);
 
   useEffect(() => {
-    localStorage.setItem('tryda_api_key', DEMO_API_KEY);
-  }, []);
+    if (!user) return;
+    fetchBusiness()
+      .then((b) => setApiKey(b.apiKey))
+      .catch(() => setError('Could not load your API key.'));
+  }, [user]);
 
-  function copy() {
-    navigator.clipboard.writeText(CODE_SNIPPET);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  function copy(text: string, which: 'key' | 'snippet') {
+    navigator.clipboard.writeText(text);
+    setCopied(which);
+    setTimeout(() => setCopied(null), 2000);
   }
+
+  if (authLoading || !user || (!apiKey && !error)) {
+    return (
+      <div className="flex min-h-screen">
+        <Sidebar />
+        <main className="ml-56 flex-1 p-6 flex items-center justify-center">
+          <p className="text-sm text-gray-500">Loading...</p>
+        </main>
+      </div>
+    );
+  }
+
+  if (error || !apiKey) {
+    return (
+      <div className="flex min-h-screen">
+        <Sidebar />
+        <main className="ml-56 flex-1 p-6 flex items-center justify-center">
+          <p className="text-sm text-status-critical">{error}</p>
+        </main>
+      </div>
+    );
+  }
+
+  const snippet = codeSnippet(apiKey);
 
   return (
     <div className="flex min-h-screen">
@@ -55,9 +88,9 @@ export default function ConnectPage() {
             <p className="text-sm font-medium text-gray-200">Your API Key</p>
           </div>
           <div className="flex items-center gap-3 bg-navy-900 rounded-lg px-4 py-3 border border-surface-border">
-            <code className="text-teal font-mono text-sm flex-1">{DEMO_API_KEY}</code>
-            <button onClick={copy} className="text-gray-500 hover:text-teal transition-colors">
-              {copied ? <CheckCircle size={14} className="text-status-healthy" /> : <Copy size={14} />}
+            <code className="text-teal font-mono text-sm flex-1">{apiKey}</code>
+            <button onClick={() => copy(apiKey, 'key')} className="text-gray-500 hover:text-teal transition-colors">
+              {copied === 'key' ? <CheckCircle size={14} className="text-status-healthy" /> : <Copy size={14} />}
             </button>
           </div>
           <p className="text-xs text-gray-500">
@@ -73,13 +106,13 @@ export default function ConnectPage() {
           </div>
           <div className="relative">
             <pre className="bg-navy-900 rounded-lg p-4 text-xs text-gray-300 font-mono overflow-x-auto border border-surface-border leading-relaxed">
-              {CODE_SNIPPET}
+              {snippet}
             </pre>
             <button
-              onClick={copy}
+              onClick={() => copy(snippet, 'snippet')}
               className="absolute top-3 right-3 btn-ghost text-xs px-2 py-1"
             >
-              {copied ? '✓ Copied' : 'Copy'}
+              {copied === 'snippet' ? '✓ Copied' : 'Copy'}
             </button>
           </div>
         </div>

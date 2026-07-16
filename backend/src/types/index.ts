@@ -97,6 +97,7 @@ export type SubscriptionTier = 'free' | 'individual' | 'enterprise_team' | 'ente
 
 export interface Business {
   id: string;
+  uid: string;                // Firebase Auth UID of the owning user
   name: string;
   email: string;
   industry: string;
