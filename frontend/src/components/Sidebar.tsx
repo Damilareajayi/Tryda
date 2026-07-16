@@ -2,10 +2,10 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, AlertTriangle, Lightbulb,
-  FileBarChart, Plug, Settings,
+  FileBarChart, Plug, Settings, LogOut,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Logo } from './Logo';
@@ -34,7 +34,8 @@ const PLAN_LABELS: Record<SubscriptionTier, string> = {
 
 export function Sidebar() {
   const path = usePathname();
-  const { user } = useAuth();
+  const router = useRouter();
+  const { user, signOut } = useAuth();
   const [business, setBusiness] = useState<BusinessProfile | null>(null);
 
   useEffect(() => {
@@ -45,17 +46,22 @@ export function Sidebar() {
   const displayName = business?.name || user?.email || 'Your Business';
   const planLabel = business ? PLAN_LABELS[business.subscriptionTier] : '—';
 
+  async function handleSignOut() {
+    await signOut();
+    router.push('/signin');
+  }
+
   return (
     <aside className="fixed left-0 top-0 h-screen w-56 bg-navy-800 border-r border-surface-border flex flex-col z-20">
       {/* Logo */}
       <div className="px-4 py-4 border-b border-surface-border">
-        <div className="flex items-center gap-2.5">
+        <Link href="/" className="flex items-center gap-2.5">
           <Logo size={30} />
           <div>
             <span className="font-bold text-lg text-white tracking-tight leading-none">Tryda</span>
             <p className="text-[10px] text-teal/80 tracking-wide mt-0.5">AI Reliability Monitor</p>
           </div>
-        </div>
+        </Link>
       </div>
 
       {/* Main nav */}
@@ -90,13 +96,20 @@ export function Sidebar() {
       {/* Footer */}
       <div className="px-4 py-4 border-t border-surface-border">
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-full bg-teal/20 flex items-center justify-center">
+          <div className="w-6 h-6 rounded-full bg-teal/20 flex items-center justify-center shrink-0">
             <span className="text-teal text-xs font-bold">{displayName.charAt(0).toUpperCase()}</span>
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs text-gray-300 font-medium truncate">{displayName}</p>
             <p className="text-xs text-gray-500 truncate">{planLabel}</p>
           </div>
+          <button
+            onClick={handleSignOut}
+            title="Sign out"
+            className="shrink-0 p-1.5 rounded-lg text-gray-500 hover:text-gray-100 hover:bg-surface-hover transition-colors duration-150"
+          >
+            <LogOut size={15} />
+          </button>
         </div>
       </div>
     </aside>
