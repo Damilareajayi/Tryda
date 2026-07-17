@@ -264,6 +264,31 @@ const CheckoutSchema = z.object({
   tier: z.enum(['individual', 'enterprise_team', 'enterprise_business']),
 });
 
+// A stored stripeCustomerId can go stale (e.g. rotating Stripe accounts, or
+// a customer deleted directly in the Dashboard) — Stripe then rejects it
+// with "No such customer" instead of transparently creating a new one.
+// Verify it still resolves under the current account before reusing it.
+async function resolveStripeCustomer(business: Business): Promise<string> {
+  if (business.stripeCustomerId) {
+    try {
+      const existing = await stripe.customers.retrieve(business.stripeCustomerId);
+      if (!existing.deleted) return business.stripeCustomerId;
+    } catch {
+      // stale — fall through and create a fresh one
+    }
+  }
+
+  const customer = await stripe.customers.create({
+    email: business.email,
+    name: business.name,
+    metadata: { businessId: business.id },
+  });
+  await getFirestore().collection('businesses').doc(business.id).update({
+    stripeCustomerId: customer.id,
+  });
+  return customer.id;
+}
+
 // ── POST /billing/create-checkout-session — start a paid subscription ───────
 router.post(
   '/billing/create-checkout-session',
@@ -276,18 +301,7 @@ router.post(
       const business = (req as any).business as Business;
       const origin = process.env.ALLOWED_ORIGIN || 'http://localhost:3001';
 
-      let customerId = business.stripeCustomerId;
-      if (!customerId) {
-        const customer = await stripe.customers.create({
-          email: business.email,
-          name: business.name,
-          metadata: { businessId: business.id },
-        });
-        customerId = customer.id;
-        await getFirestore().collection('businesses').doc(business.id).update({
-          stripeCustomerId: customerId,
-        });
-      }
+      const customerId = await resolveStripeCustomer(business);
 
       const session = await stripe.checkout.sessions.create({
         mode: 'subscription',
@@ -322,6 +336,17 @@ router.post(
 
       if (!business.stripeCustomerId) {
         return res.status(400).json({ error: 'No billing account found for this business yet' });
+      }
+
+      try {
+        await stripe.customers.retrieve(business.stripeCustomerId);
+      } catch {
+        // Stale customer (e.g. a Stripe account rotation) — clear it so a
+        // fresh checkout creates a valid one instead of failing forever.
+        await getFirestore().collection('businesses').doc(business.id).update({
+          stripeCustomerId: null,
+        });
+        return res.status(400).json({ error: 'Your billing account needs to be reconnected — please upgrade again to reactivate it.' });
       }
 
       const session = await stripe.billingPortal.sessions.create({
