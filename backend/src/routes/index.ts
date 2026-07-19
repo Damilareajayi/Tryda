@@ -549,16 +549,44 @@ router.all('/cron/run-agent', async (req, res) => {
     return res.status(401).json({ error: 'Unauthorized: Invalid Cron Secret' });
   }
 
-  const {
-    companyName = 'FitBot AI',
-    websiteUrl = 'https://fitbot-fitness-demo.com',
-    contactName = 'Sarah Jenkins',
-    contactEmail = 'sarah.jenkins@fitbot.com',
-    industry = 'Fitness and Wellness',
-    description = 'An AI-powered personal trainer assistant that helps users design workout routines and manages premium tier subscription plans.'
-  } = req.body;
-
   try {
+    const db = getFirestore();
+    let companyName = '';
+    let websiteUrl = '';
+    let contactName = '';
+    let contactEmail = '';
+    let industry = '';
+    let description = '';
+    let queueDocId: string | null = null;
+
+    // Try to pull a pending lead from the Firestore lead_queue
+    const queueSnap = await db.collection('lead_queue')
+      .where('status', '==', 'pending')
+      .limit(1)
+      .get();
+
+    if (!queueSnap.empty) {
+      const doc = queueSnap.docs[0];
+      queueDocId = doc.id;
+      const data = doc.data();
+      companyName = data.companyName || 'FitBot AI';
+      websiteUrl = data.websiteUrl || 'https://fitbot-fitness-demo.com';
+      contactName = data.contactName || 'Sarah Jenkins';
+      contactEmail = data.contactEmail || 'sarah.jenkins@fitbot.com';
+      industry = data.industry || 'Fitness and Wellness';
+      description = data.description || 'AI customer support assistant';
+      console.log(`[Queue Pull] Auditing pending lead: ${companyName} (${websiteUrl})`);
+    } else {
+      // Fallback to request body or standard defaults
+      companyName = req.body.companyName || 'FitBot AI';
+      websiteUrl = req.body.websiteUrl || 'https://fitbot-fitness-demo.com';
+      contactName = req.body.contactName || 'Sarah Jenkins';
+      contactEmail = req.body.contactEmail || 'sarah.jenkins@fitbot.com';
+      industry = req.body.industry || 'Fitness and Wellness';
+      description = req.body.description || 'An AI-powered personal trainer assistant that helps users design workout routines and manages premium tier subscription plans.';
+      console.log(`[Queue Empty] Falling back to default audit template: ${companyName}`);
+    }
+
     const geminiKey = process.env.GEMINI_API_KEY;
     if (!geminiKey) throw new Error('GEMINI_API_KEY is not defined.');
 
@@ -687,6 +715,14 @@ router.all('/cron/run-agent', async (req, res) => {
       subject,
       text: body,
     });
+
+    if (queueDocId) {
+      await db.collection('lead_queue').doc(queueDocId).update({
+        status: 'completed',
+        auditedAt: new Date().toISOString(),
+        leadId
+      });
+    }
 
     return res.json({
       success: true,
