@@ -112,6 +112,46 @@ export async function verifyCheckoutSession(sessionId: string): Promise<{ confir
   return apiFetch(`/billing/verify-session?session_id=${encodeURIComponent(sessionId)}`);
 }
 
+export async function sendEmailOTP(email: string): Promise<{ success: boolean; code?: string }> {
+  const res = await fetch(`${API_URL}/api/auth/send-email-otp`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+  if (!res.ok) throw new Error('Failed to send email OTP');
+  return res.json();
+}
+
+export async function verifyEmailOTP(email: string, code: string): Promise<{ success: boolean }> {
+  const res = await fetch(`${API_URL}/api/auth/verify-email-otp`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, code }),
+  });
+  if (!res.ok) throw new Error('Invalid or expired verification code');
+  return res.json();
+}
+
+export async function sendSMSOTP(phoneNumber: string): Promise<{ success: boolean; code?: string }> {
+  const res = await fetch(`${API_URL}/api/auth/send-sms-otp`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phoneNumber }),
+  });
+  if (!res.ok) throw new Error('Failed to send SMS OTP');
+  return res.json();
+}
+
+export async function verifySMSOTP(phoneNumber: string, code: string): Promise<{ success: boolean }> {
+  const res = await fetch(`${API_URL}/api/auth/verify-sms-otp`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phoneNumber, code }),
+  });
+  if (!res.ok) throw new Error('Invalid or expired verification code');
+  return res.json();
+}
+
 // ── Mock data for demo / development ────────────────────────────────────────
 export const MOCK_REPORT: PerformanceReport = {
   businessId: 'demo-business',

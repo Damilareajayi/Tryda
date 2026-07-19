@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createUserWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider } from '@/lib/firebase';
-import { provisionAccount } from '@/lib/api';
+import { provisionAccount, sendEmailOTP, verifyEmailOTP, sendSMSOTP, verifySMSOTP } from '@/lib/api';
 import { Logo } from '@/components/Logo';
 
 const INDUSTRIES = [
@@ -28,6 +28,7 @@ export default function SignupPage() {
   const [aiToolDescription, setAiToolDescription] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<'email' | 'google' | null>(null);
   // Set once a Google sign-in has succeeded but the account has no business
@@ -35,12 +36,102 @@ export default function SignupPage() {
   // of gating the "Continue with Google" button behind them.
   const [needsProfile, setNeedsProfile] = useState(false);
 
+  // OTP Verification States
+  const [emailCode, setEmailCode] = useState('');
+  const [phoneCode, setPhoneCode] = useState('');
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [emailOtpSent, setEmailOtpSent] = useState(false);
+  const [phoneOtpSent, setPhoneOtpSent] = useState(false);
+  const [emailSending, setEmailSending] = useState(false);
+  const [phoneSending, setPhoneSending] = useState(false);
+  const [verificationError, setVerificationError] = useState<string | null>(null);
+  const [verificationSuccess, setVerificationSuccess] = useState<string | null>(null);
+
   const profileComplete = Boolean(name.trim() && industry && aiToolDescription.trim());
+
+  async function handleSendEmailOtp() {
+    if (!email) {
+      setVerificationError('Please enter a valid email address first.');
+      return;
+    }
+    setVerificationError(null);
+    setVerificationSuccess(null);
+    setEmailSending(true);
+    try {
+      const res = await sendEmailOTP(email);
+      setEmailOtpSent(true);
+      setVerificationSuccess(`OTP sent to email! (Demo code: ${res.code})`);
+    } catch (err: any) {
+      setVerificationError(err.message || 'Failed to send email OTP');
+    } finally {
+      setEmailSending(false);
+    }
+  }
+
+  async function handleVerifyEmailOtp() {
+    if (!emailCode) {
+      setVerificationError('Please enter the 6-digit email code.');
+      return;
+    }
+    setVerificationError(null);
+    setVerificationSuccess(null);
+    try {
+      await verifyEmailOTP(email, emailCode);
+      setEmailVerified(true);
+      setVerificationSuccess('Email verified successfully!');
+    } catch (err: any) {
+      setVerificationError(err.message || 'Invalid or expired email code');
+    }
+  }
+
+  async function handleSendPhoneOtp() {
+    if (!phoneNumber) {
+      setVerificationError('Please enter a valid phone number first.');
+      return;
+    }
+    setVerificationError(null);
+    setVerificationSuccess(null);
+    setPhoneSending(true);
+    try {
+      const res = await sendSMSOTP(phoneNumber);
+      setPhoneOtpSent(true);
+      setVerificationSuccess(`OTP sent to phone! (Demo code: ${res.code})`);
+    } catch (err: any) {
+      setVerificationError(err.message || 'Failed to send phone OTP');
+    } finally {
+      setPhoneSending(false);
+    }
+  }
+
+  async function handleVerifyPhoneOtp() {
+    if (!phoneCode) {
+      setVerificationError('Please enter the 6-digit phone code.');
+      return;
+    }
+    setVerificationError(null);
+    setVerificationSuccess(null);
+    try {
+      await verifySMSOTP(phoneNumber, phoneCode);
+      setPhoneVerified(true);
+      setVerificationSuccess('Phone number verified successfully!');
+    } catch (err: any) {
+      setVerificationError(err.message || 'Invalid or expired phone code');
+    }
+  }
 
   async function handleEmailSignup(e: React.FormEvent) {
     e.preventDefault();
     if (!profileComplete) {
       setError('Please fill in your business details first.');
+      return;
+    }
+    if (!emailVerified) {
+      setError('Please verify your email address with OTP first.');
+      return;
+    }
+    if (!phoneVerified) {
+      setError('Please verify your phone number with OTP first.');
       return;
     }
     setError(null);
@@ -190,16 +281,105 @@ export default function SignupPage() {
               />
             </div>
 
-            <div className="space-y-3 pt-2 border-t border-surface-border">
-              <p className="section-label !mb-1 !mt-3">Account</p>
-              <input
-                className="input" type="email" placeholder="Email" value={email}
-                onChange={(e) => setEmail(e.target.value)} required
-              />
-              <input
-                className="input" type="password" placeholder="Password (min 6 characters)" value={password}
-                onChange={(e) => setPassword(e.target.value)} minLength={6} required
-              />
+            <div className="space-y-4 pt-2 border-t border-surface-border">
+              <p className="section-label !mb-1 !mt-3">Account Verification</p>
+              
+              {/* Verification Feedback Block */}
+              {verificationError && (
+                <div className="bg-status-critical/10 border border-status-critical/30 rounded-lg px-3 py-2 text-xs text-status-critical">
+                  {verificationError}
+                </div>
+              )}
+              {verificationSuccess && (
+                <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-3 py-2 text-xs text-emerald-400">
+                  {verificationSuccess}
+                </div>
+              )}
+
+              {/* Email Verification Section */}
+              <div className="space-y-2">
+                <label className="text-xs text-gray-400 block font-medium">Email Address</label>
+                <div className="flex gap-2">
+                  <input
+                    className="input flex-1" type="email" placeholder="email@business.com" value={email}
+                    onChange={(e) => setEmail(e.target.value)} disabled={emailVerified} required
+                  />
+                  {!emailVerified ? (
+                    <button
+                      type="button" onClick={handleSendEmailOtp} disabled={emailSending || !email}
+                      className="btn-primary text-xs px-3 py-2 h-auto"
+                    >
+                      {emailSending ? 'Sending...' : emailOtpSent ? 'Resend' : 'Send OTP'}
+                    </button>
+                  ) : (
+                    <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg px-3 py-2 text-xs flex items-center gap-1 font-semibold">
+                      ✓ Verified
+                    </span>
+                  )}
+                </div>
+
+                {emailOtpSent && !emailVerified && (
+                  <div className="flex gap-2 animate-fade-in">
+                    <input
+                      className="input flex-1" type="text" placeholder="6-digit Email code" value={emailCode}
+                      onChange={(e) => setEmailCode(e.target.value)} maxLength={6} required
+                    />
+                    <button
+                      type="button" onClick={handleVerifyEmailOtp}
+                      className="btn-ghost border border-surface-border text-xs px-3 py-2 h-auto"
+                    >
+                      Verify
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Phone Verification Section */}
+              <div className="space-y-2 pt-1">
+                <label className="text-xs text-gray-400 block font-medium">Phone Number</label>
+                <div className="flex gap-2">
+                  <input
+                    className="input flex-1" type="tel" placeholder="+1 (555) 019-2834" value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)} disabled={phoneVerified} required
+                  />
+                  {!phoneVerified ? (
+                    <button
+                      type="button" onClick={handleSendPhoneOtp} disabled={phoneSending || !phoneNumber}
+                      className="btn-primary text-xs px-3 py-2 h-auto"
+                    >
+                      {phoneSending ? 'Sending...' : phoneOtpSent ? 'Resend' : 'Send OTP'}
+                    </button>
+                  ) : (
+                    <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg px-3 py-2 text-xs flex items-center gap-1 font-semibold">
+                      ✓ Verified
+                    </span>
+                  )}
+                </div>
+
+                {phoneOtpSent && !phoneVerified && (
+                  <div className="flex gap-2 animate-fade-in">
+                    <input
+                      className="input flex-1" type="text" placeholder="6-digit Phone code" value={phoneCode}
+                      onChange={(e) => setPhoneCode(e.target.value)} maxLength={6} required
+                    />
+                    <button
+                      type="button" onClick={handleVerifyPhoneOtp}
+                      className="btn-ghost border border-surface-border text-xs px-3 py-2 h-auto"
+                    >
+                      Verify
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Password Section */}
+              <div className="space-y-2 pt-2 border-t border-surface-border/50">
+                <label className="text-xs text-gray-400 block font-medium">Password</label>
+                <input
+                  className="input w-full" type="password" placeholder="Password (min 6 characters)" value={password}
+                  onChange={(e) => setPassword(e.target.value)} minLength={6} required
+                />
+              </div>
             </div>
 
             <button type="submit" className="btn-primary w-full" disabled={loading !== null}>

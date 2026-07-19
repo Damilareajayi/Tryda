@@ -8,6 +8,7 @@ async function main() {
 
   const business: Business = {
     id: uuid(),
+    uid: 'demo-user-uid',
     name: 'WildChat Test Business',
     email: 'ajayidamilarefelix@gmail.com',
     industry: 'General AI Assistant',

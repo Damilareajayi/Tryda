@@ -2,7 +2,7 @@ import 'dotenv/config';
 import { GoogleAuth } from 'google-auth-library';
 
 const PROJECT_ID = process.env.FIREBASE_PROJECT_ID!;
-const KEY_PATH = 'c:/Users/dfa24/tryda/tryda-app-firebase-adminsdk-fbsvc-a207d0db7d.json';
+const KEY_PATH = '/home/ajayidamilarefelix/Tryda/backend/tryda-firebase-key.json';
 
 async function main() {
   const auth = new GoogleAuth({ keyFile: KEY_PATH, scopes: ['https://www.googleapis.com/auth/cloud-platform'] });

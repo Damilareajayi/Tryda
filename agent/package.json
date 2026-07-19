@@ -1,0 +1,23 @@
+{
+  "name": "tryda-growth-agent",
+  "version": "1.0.0",
+  "description": "Autonomous Marketing & Outbound Sales Agent for Tryda",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "ts-node src/index.ts",
+    "build": "tsc",
+    "test-crawler": "ts-node src/test-crawler.ts"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "dotenv": "^16.4.5",
+    "firebase-admin": "^12.3.0",
+    "playwright": "^1.45.0",
+    "resend": "^3.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  }
+}

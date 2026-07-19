@@ -299,7 +299,7 @@ router.post(
     try {
       const { tier } = CheckoutSchema.parse(req.body);
       const business = (req as any).business as Business;
-      const origin = process.env.ALLOWED_ORIGIN || 'http://localhost:3001';
+      const origin = process.env.FRONTEND_URL || 'http://localhost:3000';
 
       const customerId = await resolveStripeCustomer(business);
 
@@ -332,7 +332,7 @@ router.post(
   async (req: Request, res: Response) => {
     try {
       const business = (req as any).business as Business;
-      const origin = process.env.ALLOWED_ORIGIN || 'http://localhost:3001';
+      const origin = process.env.FRONTEND_URL || 'http://localhost:3000';
 
       if (!business.stripeCustomerId) {
         return res.status(400).json({ error: 'No billing account found for this business yet' });
@@ -406,6 +406,135 @@ router.get(
     }
   }
 );
+
+// ── OTP Authentication (Email & SMS) ────────────────────────────────────────
+
+// Generate a random 6-digit code
+function generateOTP(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// POST /auth/send-email-otp — Send 6-digit OTP to Email
+router.post('/auth/send-email-otp', async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+  try {
+    const code = generateOTP();
+    const expiresAt = Date.now() + 10 * 60 * 1000; // 10 mins
+
+    // Store in Firestore
+    await getFirestore().collection('otps').doc(`email_${email}`).set({
+      code,
+      type: 'email',
+      expiresAt,
+    });
+
+    console.log(`[EMAIL OTP] Sent to ${email}: ${code}`);
+    
+    return res.json({
+      success: true,
+      message: 'Email OTP sent successfully (check console logs)',
+      code, // Returned directly in the response for easy developer/demo testing!
+    });
+  } catch (err) {
+    console.error('Send email OTP error:', err);
+    return res.status(500).json({ error: 'Failed to send email OTP' });
+  }
+});
+
+// POST /auth/verify-email-otp — Verify 6-digit OTP for Email
+router.post('/auth/verify-email-otp', async (req, res) => {
+  const { email, code } = req.body;
+  if (!email || !code) {
+    return res.status(400).json({ error: 'Email and code are required' });
+  }
+  try {
+    const doc = await getFirestore().collection('otps').doc(`email_${email}`).get();
+    if (!doc.exists) {
+      return res.status(400).json({ error: 'No OTP requested for this email' });
+    }
+
+    const data = doc.data()!;
+    if (data.code !== code) {
+      return res.status(400).json({ error: 'Invalid verification code' });
+    }
+
+    if (Date.now() > data.expiresAt) {
+      return res.status(400).json({ error: 'Verification code has expired' });
+    }
+
+    // Clean up used OTP
+    await getFirestore().collection('otps').doc(`email_${email}`).delete();
+
+    return res.json({ success: true, message: 'Email verified successfully!' });
+  } catch (err) {
+    console.error('Verify email OTP error:', err);
+    return res.status(500).json({ error: 'Failed to verify email OTP' });
+  }
+});
+
+// POST /auth/send-sms-otp — Send 6-digit OTP to Phone
+router.post('/auth/send-sms-otp', async (req, res) => {
+  const { phoneNumber } = req.body;
+  if (!phoneNumber) {
+    return res.status(400).json({ error: 'Phone number is required' });
+  }
+  try {
+    const code = generateOTP();
+    const expiresAt = Date.now() + 10 * 60 * 1000; // 10 mins
+
+    // Store in Firestore
+    await getFirestore().collection('otps').doc(`sms_${phoneNumber}`).set({
+      code,
+      type: 'sms',
+      expiresAt,
+    });
+
+    console.log(`[SMS OTP] Sent to ${phoneNumber}: ${code}`);
+
+    return res.json({
+      success: true,
+      message: 'SMS OTP sent successfully (check console logs)',
+      code, // Returned directly in the response for easy developer/demo testing!
+    });
+  } catch (err) {
+    console.error('Send SMS OTP error:', err);
+    return res.status(500).json({ error: 'Failed to send SMS OTP' });
+  }
+});
+
+// POST /auth/verify-sms-otp — Verify 6-digit OTP for Phone
+router.post('/auth/verify-sms-otp', async (req, res) => {
+  const { phoneNumber, code } = req.body;
+  if (!phoneNumber || !code) {
+    return res.status(400).json({ error: 'Phone number and code are required' });
+  }
+  try {
+    const doc = await getFirestore().collection('otps').doc(`sms_${phoneNumber}`).get();
+    if (!doc.exists) {
+      return res.status(400).json({ error: 'No OTP requested for this phone number' });
+    }
+
+    const data = doc.data()!;
+    if (data.code !== code) {
+      return res.status(400).json({ error: 'Invalid verification code' });
+    }
+
+    if (Date.now() > data.expiresAt) {
+      return res.status(400).json({ error: 'Verification code has expired' });
+    }
+
+    // Clean up used OTP
+    await getFirestore().collection('otps').doc(`sms_${phoneNumber}`).delete();
+
+    return res.json({ success: true, message: 'Phone number verified successfully!' });
+  } catch (err) {
+    console.error('Verify SMS OTP error:', err);
+    return res.status(500).json({ error: 'Failed to verify SMS OTP' });
+  }
+});
 
 // ── GET /health ─────────────────────────────────────────────────────────────
 router.get('/health', (_req, res) => {

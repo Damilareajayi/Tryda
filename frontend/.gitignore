@@ -6,8 +6,6 @@ out/
 .env
 .env.local
 .env.*.local
-tryda-firebase-key.json
-env.yaml
 *firebase-adminsdk*.json
 *serviceAccountKey*.json
 stripe key

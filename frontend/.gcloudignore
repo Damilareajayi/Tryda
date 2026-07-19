@@ -1,0 +1,5 @@
+# Keep .env but ignore heavy build/dep folders
+node_modules/
+.next/
+out/
+.git/
