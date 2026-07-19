@@ -3,7 +3,7 @@ import './globals.css';
 import { AuthProvider } from '@/lib/auth-context';
 
 export const metadata: Metadata = {
-  title: 'Tryda / AI Reliability Monitoring',
+  title: 'Tryda | AI Reliability Monitoring',
   description: 'Catch AI drift before your customers do.',
   icons: {
     icon: [
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     shortcut: '/brand/tryda-favicon.svg',
   },
   openGraph: {
-    title: 'Tryda / AI Reliability Monitoring',
+    title: 'Tryda | AI Reliability Monitoring',
     description: 'Catch AI drift before your customers do.',
     images: [{ url: '/brand/tryda-horizontal-dark.png', width: 840, height: 240 }],
   },

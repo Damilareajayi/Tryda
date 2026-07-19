@@ -56,9 +56,9 @@ export default function AuditReportPage() {
           setError('This Tryda Audit Report could not be found or has expired.');
         }
       })
-      .catch((err) => {
+      .catch((err: any) => {
         console.error('Error fetching audit:', err);
-        setError('An error occurred while loading this report.');
+        setError('An error occurred while loading this report: ' + (err.message || err));
       })
       .finally(() => setLoading(false));
   }, []);
