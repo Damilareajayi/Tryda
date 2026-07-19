@@ -540,7 +540,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Resend } from 'resend';
 
 // ── CRON /cron/run-agent ─────────────────────────────────────────────────────
-router.post('/cron/run-agent', async (req, res) => {
+router.all('/cron/run-agent', async (req, res) => {
   // Verify Cron Security Secret
   const cronSecret = req.headers['x-cron-secret'];
   const expectedSecret = process.env.CRON_SECRET || 'tryda_cron_secret_7f6a5b4c3d2e';
