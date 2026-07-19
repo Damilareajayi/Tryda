@@ -92,7 +92,7 @@ export default function SignupPage() {
     try {
       const res = await sendEmailOTP(email);
       setEmailOtpSent(true);
-      setVerificationSuccess(`OTP sent to email! (Demo code: ${res.code})`);
+      setVerificationSuccess('OTP sent to your email successfully!');
     } catch (err: any) {
       setVerificationError(err.message || 'Failed to send email OTP');
     } finally {
@@ -127,7 +127,7 @@ export default function SignupPage() {
     try {
       const res = await sendSMSOTP(phoneNumber);
       setPhoneOtpSent(true);
-      setVerificationSuccess(`OTP sent to phone! (Demo code: ${res.code})`);
+      setVerificationSuccess('OTP sent to your phone successfully!');
     } catch (err: any) {
       setVerificationError(err.message || 'Failed to send phone OTP');
     } finally {
