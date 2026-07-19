@@ -13,5 +13,4 @@ stripe key
 npm-debug.log*
 .DS_Store
 Thumbs.db
-.claude/settings.local.json
 frontend/public/brand/mascot/source/
