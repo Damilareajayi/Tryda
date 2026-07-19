@@ -279,7 +279,14 @@ export default function SignupPage() {
                     onClick={() => {
                       const strong = generateStrongPassword();
                       setPassword(strong);
-                      setSuccessMessage(`Suggested Password: ${strong} (Copy & save it!)`);
+                      navigator.clipboard.writeText(strong)
+                        .then(() => {
+                          setSuccessMessage('A highly secure password has been generated and copied to your clipboard!');
+                          setTimeout(() => setSuccessMessage(null), 5000);
+                        })
+                        .catch(() => {
+                          setSuccessMessage(`Suggested: ${strong} (Please copy and save it!)`);
+                        });
                     }}
                     className="text-teal hover:underline text-[10px] font-medium"
                   >
@@ -287,7 +294,7 @@ export default function SignupPage() {
                   </button>
                 </div>
                 <input
-                  className="input w-full" type="text" placeholder="Password (min 8 characters)" value={password}
+                  className="input w-full" type="password" placeholder="Password (min 8 characters)" value={password}
                   onChange={(e) => setPassword(e.target.value)} required
                 />
                 <p className="text-[10px] text-gray-500 leading-normal">
