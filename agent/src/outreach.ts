@@ -104,7 +104,7 @@ export class EmailOutreach {
 
     try {
       const response = await this.resend.emails.send({
-        from: 'Tryda Growth Team <growth@tryda-ai.web.app>', // Using the new verified domain
+        from: 'Tryda Growth Team <aireports@tryda.io>', // Using the premium custom domain
         to: payload.contactEmail,
         subject: draft.subject,
         text: draft.body,
