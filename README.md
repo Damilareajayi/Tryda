@@ -4,8 +4,14 @@
 > Tryda is a premium, real-time diagnostic and 24/7 accuracy monitoring platform for production chatbots, virtual assistants, and LLM-driven applications.
 
 ### 🌐 Live Platform
-The Tryda platform is fully compiled, verified, and live at:
-👉 **[https://tryda-ai.web.app](https://tryda-ai.web.app)**
+The Tryda platform is fully compiled, verified, and live at our primary custom domain:
+👉 **[https://tryda.io](https://tryda.io)** *(Backup: [https://tryda-ai.web.app](https://tryda-ai.web.app))*
+
+### 🎯 Why `tryda.io`?
+We selected **`tryda.io`** as our primary custom domain for several strategic business reasons:
+* **Premium Tech Authority**: The `.io` domain is universally trusted and recognized as the gold standard for developer-facing tech platforms, API tools, and AI SaaS apps (such as `sentry.io` or `socket.io`).
+* **High-Conversion Outbound**: Outbound emails sent from our custom domain—specifically **`aireports@tryda.io`**—carry immediate B2B credibility, resulting in significantly higher open and click-through rates.
+* **Sleek & Memorable**: It offers a short, crisp, and brand-aligned name that resonates with engineering managers, support leaders, and product heads.
 
 ---
 
@@ -17,7 +23,7 @@ The Tryda platform is fully compiled, verified, and live at:
 3. **Diagnostic Evaluation**: The captured transcript is sent to our evaluation engine, scoring the bot (0-100) and generating highly actionable system prompt suggestions.
 4. **0-Friction Signup Flow**:
    - Stores the audit report securely in our Firebase Firestore `leads` collection.
-   - Generates an un-gated shareable report URL: `https://tryda-ai.web.app/audit?id=[leadId]`
+   - Generates an un-gated shareable report URL: `https://tryda.io/audit?id=[leadId]`
    - Prefills the signup form instantly with the lead's business name, email, and description, leaving them only to input a password or sign in with Google!
 5. **Programmatic Outreach**: Uses Gemini to draft highly compelling, hyper-personalized emails highlighting the exact chatbot failure found, dispatched via the **Resend API** from our verified custom domain **`aireports@tryda.io`**.
 
@@ -45,7 +51,7 @@ Tryda/
 
 ### 1. Frontend Workspace (`/frontend`)
 * **Tech Stack**: Next.js 14, TailwindCSS, Lucide icons, Recharts visualization library.
-* **Deployment**: Configured as a fully static SPA (`output: 'export'`) hosted on **Firebase Hosting's global CDN** under `tryda-ai.web.app`.
+* **Deployment**: Configured as a fully static SPA (`output: 'export'`) hosted on **Firebase Hosting's global CDN** under `tryda.io` (with backup `tryda-ai.web.app`).
 * **Security & Auth**: Integrates Firebase Authentication:
   * **Email & Password**: Standard password registration requiring 8+ characters, uppercase, numbers, and special symbols, triggering automatic Firebase email verification links on mount.
   * **Google Sign-In**: Powered by `GoogleAuthProvider` configured with `select_account` prompts to enforce explicit user account choosing.
@@ -82,7 +88,7 @@ NEXT_PUBLIC_API_URL=https://tryda-backend-189488931966.us-central1.run.app
 ```yaml
 FIREBASE_PROJECT_ID: "tryda-app"
 GOOGLE_CLOUD_PROJECT: "july-push"
-FRONTEND_URL: "https://tryda-ai.web.app"
+FRONTEND_URL: "https://tryda.io"
 GEMINI_API_KEY: "your_gemini_key"
 STRIPE_SECRET_KEY: "your_stripe_key"
 ```
