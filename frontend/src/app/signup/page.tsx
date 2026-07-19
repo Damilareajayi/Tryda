@@ -1,9 +1,10 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createUserWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
-import { auth, googleProvider } from '@/lib/firebase';
+import { getFirestore, doc, getDoc } from 'firebase/firestore';
+import { auth, googleProvider, firebaseApp } from '@/lib/firebase';
 import { provisionAccount, sendEmailOTP, verifyEmailOTP, sendSMSOTP, verifySMSOTP } from '@/lib/api';
 import { Logo } from '@/components/Logo';
 
@@ -47,6 +48,36 @@ export default function SignupPage() {
   const [phoneSending, setPhoneSending] = useState(false);
   const [verificationError, setVerificationError] = useState<string | null>(null);
   const [verificationSuccess, setVerificationSuccess] = useState<string | null>(null);
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const auditId = searchParams.get('id');
+    if (!auditId) return;
+
+    const db = getFirestore(firebaseApp);
+    getDoc(doc(db, 'leads', auditId))
+      .then((snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data.companyName) setName(data.companyName);
+          if (data.contactEmail) setEmail(data.contactEmail);
+          
+          const matchedIndustry = INDUSTRIES.find(
+            ind => ind.toLowerCase() === (data.industry || '').toLowerCase()
+          );
+          setIndustry(matchedIndustry || 'Other');
+          
+          if (data.websiteUrl) {
+            setAiToolDescription(`AI support chatbot on website: ${data.websiteUrl}`);
+          } else {
+            setAiToolDescription('AI customer support assistant');
+          }
+        }
+      })
+      .catch((err) => {
+        console.error('Error prefilling lead details:', err);
+      });
+  }, []);
 
   const profileComplete = Boolean(name.trim() && industry && aiToolDescription.trim());
 

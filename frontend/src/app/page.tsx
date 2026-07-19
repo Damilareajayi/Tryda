@@ -156,6 +156,44 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* AI Use Cases / Portfolio */}
+      <section className="max-w-6xl mx-auto px-6 py-16 border-t border-surface-border">
+        <div className="text-center mb-10">
+          <p className="section-label">Supported Use Cases</p>
+          <h2 className="text-2xl font-bold text-gray-100 mt-2">Continuously monitor any AI agent or platform</h2>
+          <p className="text-sm text-gray-500 mt-2">Tryda goes beyond standard web-chatbots to protect every AI-driven customer and business interaction.</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="card border-surface-border hover:border-teal/30 transition-all p-6 space-y-3">
+            <div className="text-teal font-bold text-lg">💬 Chatbots & Web Assistants</div>
+            <p className="text-xs text-gray-400 leading-relaxed">
+              Real-time monitoring for your web-based customer support widgets. Catch pricing errors, incorrect refunds, or flustered bot behavior before real users do.
+            </p>
+            <div className="text-[10px] bg-navy-800 text-teal-400 inline-block px-2.5 py-1 rounded">
+              Zendesk, Intercom Fin, Custom GPTs
+            </div>
+          </div>
+          <div className="card border-surface-border hover:border-teal/30 transition-all p-6 space-y-3">
+            <div className="text-teal font-bold text-lg">📞 Voice & SMS Service Bots</div>
+            <p className="text-xs text-gray-400 leading-relaxed">
+              Verify accuracy and brand compliance for telephony agents. Ensure voice prompt routing, phone transcription logs, and automated text dispatches remain fully accurate.
+            </p>
+            <div className="text-[10px] bg-navy-800 text-teal-400 inline-block px-2.5 py-1 rounded">
+              Twilio, VAPI, Bland.ai, SMS bots
+            </div>
+          </div>
+          <div className="card border-surface-border hover:border-teal/30 transition-all p-6 space-y-3">
+            <div className="text-teal font-bold text-lg">👔 HR & Candidate Screening AI</div>
+            <p className="text-xs text-gray-400 leading-relaxed">
+              Ensure compliance and fairness in recruitment automations. Monitor resume vetting models, automated vetting scores, and recruitment scheduling assistants for reliability.
+            </p>
+            <div className="text-[10px] bg-navy-800 text-teal-400 inline-block px-2.5 py-1 rounded">
+              Applicant Tracking (ATS), Resume Vetters
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Pricing */}
       <section className="max-w-6xl mx-auto px-6 py-16">
         <div className="text-center mb-10">

@@ -203,17 +203,21 @@ export default function AuditReportPage() {
 
         {/* Closing CTA */}
         <div className="card bg-gradient-to-r from-teal-glow/20 via-navy-900 to-navy-900 border-teal/25 p-8 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="space-y-1 text-center md:text-left">
-            <h3 className="text-lg font-bold text-white">Want continuous AI quality tracking?</h3>
-            <p className="text-sm text-gray-400">
-              Set up real-time drift detection and 24/7 accuracy monitoring in less than 5 minutes.
+          <div className="space-y-1.5 text-center md:text-left">
+            <h3 className="text-xl font-bold text-white">Don't let your AI hallucinate on real customers</h3>
+            <p className="text-sm text-gray-400 max-w-xl">
+              Deploy Tryda's real-time safety guardrails. Instantly fix policy breaches, prevent costly pricing errors, and make your AI assistant 100% reliable.
             </p>
           </div>
           <button
-            onClick={() => router.push('/signup')}
+            onClick={() => {
+              const searchParams = new URLSearchParams(window.location.search);
+              const auditId = searchParams.get('id');
+              router.push(auditId ? `/signup?id=${auditId}` : '/signup');
+            }}
             className="btn-primary flex items-center gap-2 text-navy-950 font-bold px-6 py-3 shrink-0"
           >
-            Monitor Your AI Free
+            Supercharge Your AI Quality Now
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>
