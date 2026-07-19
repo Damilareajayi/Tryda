@@ -12,6 +12,8 @@ import { scoreToStatus } from '@/lib/utils';
 import { PerformanceReport, DriftEvent, Recommendation } from '@/types';
 import { cn } from '@/lib/utils';
 import { useRequireAuth } from '@/lib/useRequireAuth';
+import { auth } from '@/lib/firebase';
+import { sendEmailVerification } from 'firebase/auth';
 
 function StatCard({
   label, value, icon: Icon, sub, highlight,
@@ -112,6 +114,45 @@ export default function DashboardPage() {
       <Sidebar />
 
       <main className="ml-56 flex-1 p-6 space-y-6">
+        {user && !user.emailVerified && user.providerData.some(p => p.providerId === 'password') && (
+          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="space-y-1 text-center sm:text-left">
+              <p className="text-sm font-semibold text-yellow-400 flex items-center gap-1.5 justify-center sm:justify-start">
+                <span>✉️</span> Verify your email address
+              </p>
+              <p className="text-xs text-gray-400">
+                Please click the link in the email we sent to <strong>{user.email}</strong> to verify your account and unlock all features.
+              </p>
+            </div>
+            <div className="flex gap-2 shrink-0">
+              <button
+                onClick={() => {
+                  if (auth.currentUser) {
+                    sendEmailVerification(auth.currentUser)
+                      .then(() => alert('Verification email resent successfully!'))
+                      .catch((err) => alert('Failed to resend: ' + err.message));
+                  }
+                }}
+                className="btn-primary text-xs px-3 py-1.5 h-auto text-navy-950 font-semibold"
+              >
+                Resend Email
+              </button>
+              <button
+                onClick={() => {
+                  if (auth.currentUser) {
+                    auth.currentUser.reload().then(() => {
+                      window.location.reload();
+                    });
+                  }
+                }}
+                className="btn-ghost border border-surface-border text-xs px-3 py-1.5 h-auto text-gray-300"
+              >
+                Refresh Status
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
