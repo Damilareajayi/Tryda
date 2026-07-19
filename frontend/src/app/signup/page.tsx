@@ -22,6 +22,30 @@ function friendlyError(err: any): string {
   return `Something went wrong${code ? ` (${code})` : ''}. Please try again.`;
 }
 
+function isStrongPassword(p: string): boolean {
+  return p.length >= 8 && /[A-Z]/.test(p) && /[0-9]/.test(p) && /[^A-Za-z0-9]/.test(p);
+}
+
+function generateStrongPassword(): string {
+  const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const lower = 'abcdefghijklmnopqrstuvwxyz';
+  const numbers = '0123456789';
+  const special = '!@#$%^&*()_+-=[]{}|;:,./?';
+  
+  let p = '';
+  p += upper[Math.floor(Math.random() * upper.length)];
+  p += lower[Math.floor(Math.random() * lower.length)];
+  p += numbers[Math.floor(Math.random() * numbers.length)];
+  p += special[Math.floor(Math.random() * special.length)];
+  
+  const all = upper + lower + numbers + special;
+  for (let i = 0; i < 8; i++) {
+    p += all[Math.floor(Math.random() * all.length)];
+  }
+  
+  return p.split('').sort(() => Math.random() - 0.5).join('');
+}
+
 export default function SignupPage() {
   const router = useRouter();
   const [name, setName] = useState('');
@@ -70,6 +94,10 @@ export default function SignupPage() {
     e.preventDefault();
     if (!profileComplete) {
       setError('Please fill in your business details first.');
+      return;
+    }
+    if (!isStrongPassword(password)) {
+      setError('Password is too weak. It must be at least 8 characters long and contain at least one uppercase letter, one number, and one special character (e.g. !, @, #, $, etc.).');
       return;
     }
     setError(null);
@@ -243,10 +271,29 @@ export default function SignupPage() {
                 onChange={(e) => setEmail(e.target.value)} required
               />
               
-              <input
-                className="input w-full" type="password" placeholder="Password (min 6 characters)" value={password}
-                onChange={(e) => setPassword(e.target.value)} minLength={6} required
-              />
+              <div className="space-y-1">
+                <div className="flex justify-between items-center">
+                  <label className="text-[11px] text-gray-500 font-medium">Password</label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const strong = generateStrongPassword();
+                      setPassword(strong);
+                      setSuccessMessage(`Suggested Password: ${strong} (Copy & save it!)`);
+                    }}
+                    className="text-teal hover:underline text-[10px] font-medium"
+                  >
+                    Suggest strong password
+                  </button>
+                </div>
+                <input
+                  className="input w-full" type="text" placeholder="Password (min 8 characters)" value={password}
+                  onChange={(e) => setPassword(e.target.value)} required
+                />
+                <p className="text-[10px] text-gray-500 leading-normal">
+                  Must be at least 8 characters and include an uppercase letter, a number, and a symbol.
+                </p>
+              </div>
             </div>
 
             <button type="submit" className="btn-primary w-full" disabled={loading !== null}>
