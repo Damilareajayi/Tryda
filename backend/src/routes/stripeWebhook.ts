@@ -4,7 +4,9 @@ import Stripe from 'stripe';
 import { stripe, TIER_CONVERSATION_LIMITS, TIER_PRICE_IDS } from '../services/stripeClient';
 
 function tierForPriceId(priceId: string | undefined): string | undefined {
-  return Object.entries(TIER_PRICE_IDS).find(([, id]) => id === priceId)?.[0];
+  const matchedKey = Object.entries(TIER_PRICE_IDS).find(([, id]) => id === priceId)?.[0];
+  if (!matchedKey) return undefined;
+  return matchedKey.replace('_yearly', '');
 }
 
 export async function handleStripeWebhook(req: Request, res: Response) {

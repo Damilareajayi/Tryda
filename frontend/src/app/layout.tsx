@@ -3,8 +3,33 @@ import './globals.css';
 import { AuthProvider } from '@/lib/auth-context';
 
 export const metadata: Metadata = {
-  title: 'Tryda | AI Reliability Monitoring',
-  description: 'Catch AI drift before your customers do.',
+  metadataBase: new URL('https://tryda-ai.web.app'),
+  title: 'Tryda | AI Chatbot Reliability & Drift Monitoring Platform',
+  description: 'Monitor and audit your AI customer support chatbots in real time. Catch hallucinations, prevent costly pricing and refund policy breaches, and ensure 100% brand reliability on Crisp, Intercom, and custom widgets.',
+  keywords: [
+    'AI chatbot audit',
+    'chatbot reliability monitoring',
+    'LLM drift detection',
+    'customer support AI testing',
+    'prevent chatbot refund policy breaches',
+    'Crisp chatbot monitor',
+    'Intercom AI audit tool',
+    'B2B AI guardrails'
+  ],
+  alternates: {
+    canonical: 'https://tryda.io'
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
   icons: {
     icon: [
       { url: '/brand/tryda-favicon-32.png', sizes: '32x32', type: 'image/png' },
@@ -14,10 +39,20 @@ export const metadata: Metadata = {
     shortcut: '/brand/tryda-favicon.svg',
   },
   openGraph: {
-    title: 'Tryda | AI Reliability Monitoring',
-    description: 'Catch AI drift before your customers do.',
+    title: 'Tryda | AI Chatbot Reliability & Drift Monitoring Platform',
+    description: 'Monitor and audit your AI customer support chatbots in real time. Catch hallucinations, prevent costly policy breaches, and ensure 100% brand reliability.',
+    url: 'https://tryda.io',
+    siteName: 'Tryda',
     images: [{ url: '/brand/tryda-horizontal-dark.png', width: 840, height: 240 }],
+    locale: 'en_US',
+    type: 'website',
   },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Tryda | AI Chatbot Reliability & Drift Monitoring Platform',
+    description: 'Monitor and audit your AI customer support chatbots in real time. Catch hallucinations, prevent costly policy breaches, and ensure 100% brand reliability.',
+    images: ['/brand/tryda-horizontal-dark.png'],
+  }
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

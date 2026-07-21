@@ -97,10 +97,10 @@ export async function fetchBusiness(): Promise<BusinessProfile> {
   return apiFetch<BusinessProfile>('/business');
 }
 
-export async function createCheckoutSession(tier: SubscriptionTier): Promise<{ url: string }> {
+export async function createCheckoutSession(tier: SubscriptionTier, interval: 'monthly' | 'yearly' = 'monthly'): Promise<{ url: string }> {
   return apiFetch('/billing/create-checkout-session', {
     method: 'POST',
-    body: JSON.stringify({ tier }),
+    body: JSON.stringify({ tier, interval }),
   });
 }
 

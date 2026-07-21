@@ -75,7 +75,7 @@ export default function DashboardPage() {
     return (
       <div className="flex min-h-screen">
         <Sidebar />
-        <main className="ml-56 flex-1 p-6 flex items-center justify-center">
+        <main className="ml-0 lg:ml-56 pt-20 lg:pt-6 flex-1 p-6 flex items-center justify-center">
           <p className="text-sm text-gray-500">Loading dashboard...</p>
         </main>
       </div>
@@ -86,7 +86,7 @@ export default function DashboardPage() {
     return (
       <div className="flex min-h-screen">
         <Sidebar />
-        <main className="ml-56 flex-1 p-6 flex items-center justify-center">
+        <main className="ml-0 lg:ml-56 pt-20 lg:pt-6 flex-1 p-6 flex items-center justify-center">
           <div className="card text-center py-12 px-10 max-w-md">
             <Link href="/">
               <img
@@ -113,7 +113,7 @@ export default function DashboardPage() {
     <div className="flex min-h-screen">
       <Sidebar />
 
-      <main className="ml-56 flex-1 p-6 space-y-6">
+      <main className="ml-0 lg:ml-56 pt-20 lg:pt-6 flex-1 p-6 space-y-6">
         {user && !user.emailVerified && user.providerData.some(p => p.providerId === 'password') && (
           <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="space-y-1 text-center sm:text-left">
@@ -154,23 +154,23 @@ export default function DashboardPage() {
         )}
 
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-surface-border/40 pb-4 sm:border-0 sm:pb-0">
           <div>
             <h1 className="text-xl font-semibold text-gray-100">Dashboard</h1>
             <p className="text-sm text-gray-500 mt-0.5">
               Real-time AI reliability overview
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 self-start sm:self-auto bg-navy-900 px-3 py-1.5 rounded-full border border-surface-border">
             <div className="w-2 h-2 rounded-full bg-teal animate-pulse" />
             <span className="text-xs text-gray-500">Live monitoring</span>
           </div>
         </div>
 
         {/* Top row: Health ring + stats */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Health ring card */}
-          <div className="card col-span-1 flex flex-col items-center justify-center py-6 border-surface-border">
+          <div className="card col-span-1 sm:col-span-2 lg:col-span-1 flex flex-col items-center justify-center py-6 border-surface-border">
             <HealthScoreRing score={score} status={status} size={140} />
             <div className="mt-4">
               <TrendBadge trend={report.summary.trend} pct={Math.abs(report.summary.trendPercentage)} />
@@ -216,7 +216,7 @@ export default function DashboardPage() {
         )}
 
         {/* Chart */}
-        <div className="card">
+        <div className="card w-full overflow-hidden min-w-0">
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm font-medium text-gray-200">Quality Score — 7 Day Trend</p>
             <span className="text-xs text-gray-500">Baseline: {87}/100</span>
@@ -225,7 +225,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Drift events + Recommendations */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div>
             <p className="section-label">Recent Drift Events</p>
             <div className="space-y-3">

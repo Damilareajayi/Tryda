@@ -1,5 +1,5 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Activity, AlertTriangle, Lightbulb, FileBarChart, Plug, CheckCircle2 } from 'lucide-react';
@@ -37,25 +37,33 @@ const STEPS = [
 
 const PLANS = [
   {
-    name: 'Free', price: '$0', period: '',
+    name: 'Free',
+    price: { monthly: '$0', yearly: '$0' },
+    period: { monthly: '', yearly: '' },
     blurb: 'Get started and see it work',
     features: ['100 conversations/month', '1 AI tool', 'Quality scoring', 'Basic drift alerts', 'CSV/JSON log upload (200 rows)'],
     cta: 'Start free', highlight: false,
   },
   {
-    name: 'Individual', price: '$10', period: '/mo',
+    name: 'Individual',
+    price: { monthly: '$15', yearly: '$12' },
+    period: { monthly: '/mo', yearly: '/mo, billed annually' },
     blurb: 'For solo builders and small teams',
     features: ['1,000 conversations/month', '1 AI tool', 'Full drift detection', 'AI recommendations', 'CSV & Excel export', 'Bulk log upload (5,000 rows)'],
     cta: 'Get started', highlight: true,
   },
   {
-    name: 'Enterprise — Team', price: '$50', period: '/mo',
+    name: 'Enterprise — Team',
+    price: { monthly: '$40', yearly: '$32' },
+    period: { monthly: '/mo', yearly: '/mo, billed annually' },
     blurb: 'For growing support teams',
     features: ['10,000 conversations/month', 'Multiple AI tools', 'Priority alerts', 'Weekly reports', 'CSV & Excel export', 'Bulk log upload (5,000 rows)'],
     cta: 'Get started', highlight: false,
   },
   {
-    name: 'Enterprise — Business', price: '$100', period: '/mo',
+    name: 'Enterprise — Business',
+    price: { monthly: '$85', yearly: '$68' },
+    period: { monthly: '/mo', yearly: '/mo, billed annually' },
     blurb: 'For high-volume operations',
     features: ['Unlimited conversations', 'Unlimited AI tools', 'Dedicated support', 'Custom thresholds', 'CSV & Excel export', 'Bulk log upload (5,000 rows)'],
     cta: 'Get started', highlight: false,
@@ -65,6 +73,7 @@ const PLANS = [
 export default function LandingPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
 
   useEffect(() => {
     if (!loading && user) router.replace('/dashboard');
@@ -199,6 +208,20 @@ export default function LandingPage() {
         <div className="text-center mb-10">
           <h2 className="text-2xl font-bold text-gray-100">Simple, usage-based pricing</h2>
           <p className="text-sm text-gray-500 mt-2">Start free. Upgrade when you need more volume.</p>
+          
+          {/* Monthly / Yearly Billing Toggle */}
+          <div className="flex items-center justify-center gap-3 mt-6">
+            <span className={`text-xs font-medium ${billingPeriod === 'monthly' ? 'text-teal' : 'text-gray-400'}`}>Monthly</span>
+            <button
+              onClick={() => setBillingPeriod(billingPeriod === 'monthly' ? 'yearly' : 'monthly')}
+              className="w-10 h-6 bg-navy-800 border border-surface-border rounded-full p-1 transition-colors duration-200 focus:outline-none flex items-center"
+            >
+              <div className={`w-4 h-4 rounded-full bg-teal transition-transform duration-200 transform ${billingPeriod === 'yearly' ? 'translate-x-4' : ''}`} />
+            </button>
+            <span className={`text-xs font-medium ${billingPeriod === 'yearly' ? 'text-teal' : 'text-gray-400'}`}>
+              Yearly <span className="bg-teal/10 text-teal border border-teal/20 px-1.5 py-0.5 rounded text-[10px] ml-1">Save 20%</span>
+            </span>
+          </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {PLANS.map((plan) => (
@@ -212,8 +235,8 @@ export default function LandingPage() {
               <p className="text-sm font-semibold text-gray-100">{plan.name}</p>
               <p className="text-xs text-gray-500 mt-0.5">{plan.blurb}</p>
               <p className="mt-4">
-                <span className="text-3xl font-bold text-gray-100">{plan.price}</span>
-                <span className="text-sm text-gray-500">{plan.period}</span>
+                <span className="text-3xl font-bold text-gray-100">{plan.price[billingPeriod]}</span>
+                <span className="text-sm text-gray-500">{plan.period[billingPeriod]}</span>
               </p>
               <ul className="space-y-2 mt-5 mb-6 flex-1">
                 {plan.features.map((f) => (
@@ -236,11 +259,18 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="border-t border-surface-border">
-        <div className="max-w-6xl mx-auto px-6 py-8 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <Logo size={20} />
-            <span className="text-sm text-gray-500">Tryda</span>
-          </Link>
+        <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-6">
+            <Link href="/" className="flex items-center gap-2">
+              <Logo size={20} />
+              <span className="text-sm text-gray-500">Tryda</span>
+            </Link>
+            <div className="flex items-center gap-4 text-xs text-gray-500">
+              <Link href="/terms" className="hover:text-gray-300 hover:underline">Terms of Service</Link>
+              <span>&middot;</span>
+              <Link href="/privacy" className="hover:text-gray-300 hover:underline">Privacy Policy</Link>
+            </div>
+          </div>
           <p className="text-xs text-gray-600">© {new Date().getFullYear()} Tryda. All rights reserved.</p>
         </div>
       </footer>

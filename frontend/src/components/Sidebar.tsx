@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, AlertTriangle, Lightbulb,
   FileBarChart, Plug, Settings, LogOut,
+  Menu, X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Logo } from './Logo';
@@ -37,11 +38,17 @@ export function Sidebar() {
   const router = useRouter();
   const { user, signOut } = useAuth();
   const [business, setBusiness] = useState<BusinessProfile | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     if (!user) return;
     fetchBusiness().then(setBusiness).catch(() => {});
   }, [user]);
+
+  // Close sidebar on path change
+  useEffect(() => {
+    setIsOpen(false);
+  }, [path]);
 
   const displayName = business?.name || user?.email || 'Your Business';
   const planLabel = business ? PLAN_LABELS[business.subscriptionTier] : '—';
@@ -52,17 +59,54 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-56 bg-navy-800 border-r border-surface-border flex flex-col z-20">
-      {/* Logo */}
-      <div className="px-4 py-4 border-b border-surface-border">
-        <Link href="/" className="flex items-center gap-2.5">
-          <Logo size={30} />
-          <div>
-            <span className="font-bold text-lg text-white tracking-tight leading-none">Tryda</span>
-            <p className="text-[10px] text-teal/80 tracking-wide mt-0.5">AI Reliability Monitor</p>
-          </div>
+    <>
+      {/* Mobile Top Bar */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-navy-900 border-b border-surface-border flex items-center justify-between px-4 z-30">
+        <Link href="/dashboard" className="flex items-center gap-2">
+          <Logo size={24} />
+          <span className="font-bold text-md text-white tracking-tight">Tryda</span>
         </Link>
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-navy-800 transition-colors"
+          aria-label="Toggle navigation menu"
+        >
+          {isOpen ? <X size={20} /> : <Menu size={20} />}
+        </button>
       </div>
+
+      {/* Backdrop overlay for mobile drawer */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 lg:hidden z-30"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
+      {/* Sidebar aside element */}
+      <aside
+        className={cn(
+          "fixed left-0 top-0 h-screen w-56 bg-navy-800 border-r border-surface-border flex flex-col z-40 transition-transform duration-300 ease-in-out lg:translate-x-0",
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        {/* Logo and close button */}
+        <div className="px-4 py-4 border-b border-surface-border flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5">
+            <Logo size={30} />
+            <div>
+              <span className="font-bold text-lg text-white tracking-tight leading-none">Tryda</span>
+              <p className="text-[10px] text-teal/80 tracking-wide mt-0.5">AI Reliability Monitor</p>
+            </div>
+          </Link>
+          {/* Close button inside sidebar drawer on mobile */}
+          <button
+            onClick={() => setIsOpen(false)}
+            className="lg:hidden p-1 rounded-lg text-gray-400 hover:text-white hover:bg-navy-700"
+          >
+            <X size={18} />
+          </button>
+        </div>
 
       {/* Main nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5">
@@ -113,5 +157,6 @@ export function Sidebar() {
         </div>
       </div>
     </aside>
+    </>
   );
 }

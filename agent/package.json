@@ -5,6 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "start": "ts-node src/index.ts",
+    "prospect": "ts-node src/prospector.ts",
     "build": "tsc",
     "test-crawler": "ts-node src/test-crawler.ts"
   },

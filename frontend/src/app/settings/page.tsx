@@ -14,10 +14,30 @@ const PLAN_LABELS: Record<SubscriptionTier, string> = {
   enterprise_business: 'Enterprise — Business Plan',
 };
 
-const UPGRADE_OPTIONS: Array<{ tier: SubscriptionTier; label: string; price: string; blurb: string }> = [
-  { tier: 'individual', label: 'Individual', price: '$10/mo', blurb: '1,000 conversations/month · 1 AI tool · CSV & Excel export' },
-  { tier: 'enterprise_team', label: 'Enterprise — Team', price: '$50/mo', blurb: '10,000 conversations/month · multiple AI tools · CSV & Excel export' },
-  { tier: 'enterprise_business', label: 'Enterprise — Business', price: '$100/mo', blurb: 'Unlimited conversations · dedicated support · CSV & Excel export' },
+const UPGRADE_OPTIONS: Array<{
+  tier: SubscriptionTier;
+  label: string;
+  price: { monthly: string; yearly: string };
+  blurb: string;
+}> = [
+  {
+    tier: 'individual',
+    label: 'Individual',
+    price: { monthly: '$15/mo', yearly: '$12/mo' },
+    blurb: '1,000 conversations/month · 1 AI tool · CSV & Excel export',
+  },
+  {
+    tier: 'enterprise_team',
+    label: 'Enterprise — Team',
+    price: { monthly: '$40/mo', yearly: '$32/mo' },
+    blurb: '10,000 conversations/month · multiple AI tools · CSV & Excel export',
+  },
+  {
+    tier: 'enterprise_business',
+    label: 'Enterprise — Business',
+    price: { monthly: '$85/mo', yearly: '$68/mo' },
+    blurb: 'Unlimited conversations · dedicated support · CSV & Excel export',
+  },
 ];
 
 export default function SettingsPage() {
@@ -38,6 +58,7 @@ function SettingsPageInner() {
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [checkoutNotice, setCheckoutNotice] = useState<string | null>(null);
+  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
 
   async function handleSignOut() {
     await signOut();
@@ -80,7 +101,7 @@ function SettingsPageInner() {
   async function handleUpgrade(tier: SubscriptionTier) {
     setActionLoading(tier);
     try {
-      const { url } = await createCheckoutSession(tier);
+      const { url } = await createCheckoutSession(tier, billingPeriod);
       window.location.href = url;
     } catch {
       setError('Could not start checkout. Please try again.');
@@ -102,7 +123,7 @@ function SettingsPageInner() {
   return (
     <div className="flex min-h-screen">
       <Sidebar />
-      <main className="ml-56 flex-1 p-6 space-y-6 max-w-2xl">
+      <main className="ml-0 lg:ml-56 pt-20 lg:pt-6 flex-1 p-6 space-y-6 max-w-2xl">
         <div>
           <h1 className="text-xl font-semibold text-gray-100">Settings</h1>
           <p className="text-sm text-gray-500 mt-0.5">Manage your account and monitoring preferences</p>
@@ -168,25 +189,41 @@ function SettingsPageInner() {
               </div>
 
               {business.subscriptionTier === 'free' && (
-                <div className="grid grid-cols-1 gap-3 pt-2">
-                  {UPGRADE_OPTIONS.map((opt) => (
-                    <div
-                      key={opt.tier}
-                      className="flex items-center justify-between bg-navy-900 rounded-lg px-4 py-3 border border-surface-border"
+                <div className="space-y-4 pt-2">
+                  {/* Monthly / Yearly Billing Toggle */}
+                  <div className="flex items-center gap-3 bg-navy-950 p-3 rounded-lg border border-surface-border">
+                    <span className={`text-xs font-medium ${billingPeriod === 'monthly' ? 'text-teal' : 'text-gray-400'}`}>Monthly Billing</span>
+                    <button
+                      onClick={() => setBillingPeriod(billingPeriod === 'monthly' ? 'yearly' : 'monthly')}
+                      className="w-10 h-6 bg-navy-900 border border-surface-border rounded-full p-1 transition-colors duration-200 focus:outline-none flex items-center"
                     >
-                      <div>
-                        <p className="text-sm text-gray-200 font-medium">{opt.label} — {opt.price}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">{opt.blurb}</p>
-                      </div>
-                      <button
-                        className="btn-primary text-xs shrink-0"
-                        onClick={() => handleUpgrade(opt.tier)}
-                        disabled={actionLoading === opt.tier}
+                      <div className={`w-4 h-4 rounded-full bg-teal transition-transform duration-200 transform ${billingPeriod === 'yearly' ? 'translate-x-4' : ''}`} />
+                    </button>
+                    <span className={`text-xs font-medium ${billingPeriod === 'yearly' ? 'text-teal' : 'text-gray-400'}`}>
+                      Yearly Billing <span className="bg-teal/10 text-teal border border-teal/20 px-1.5 py-0.5 rounded text-[10px] ml-1">Save 20%</span>
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3">
+                    {UPGRADE_OPTIONS.map((opt) => (
+                      <div
+                        key={opt.tier}
+                        className="flex items-center justify-between bg-navy-900 rounded-lg px-4 py-3 border border-surface-border"
                       >
-                        {actionLoading === opt.tier ? 'Redirecting...' : 'Upgrade'}
-                      </button>
-                    </div>
-                  ))}
+                        <div>
+                          <p className="text-sm text-gray-200 font-medium">{opt.label} — {opt.price[billingPeriod]}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">{opt.blurb}</p>
+                        </div>
+                        <button
+                          className="btn-primary text-xs shrink-0"
+                          onClick={() => handleUpgrade(opt.tier)}
+                          disabled={actionLoading === opt.tier}
+                        >
+                          {actionLoading === opt.tier ? 'Redirecting...' : 'Upgrade'}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

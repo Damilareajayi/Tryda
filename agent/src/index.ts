@@ -41,6 +41,7 @@ async function runAgent(input: LeadInput, simulate = false) {
   let issues: string[] = [];
   let summary = '';
   let actionableFix = '';
+  let chatWidget = 'generic';
 
   const driver = new ConversationDriver();
 
@@ -67,6 +68,7 @@ async function runAgent(input: LeadInput, simulate = false) {
         return runAgent(input, true);
       }
 
+      chatWidget = crawler.detectedWidget || 'generic';
       await crawler.openChat(config);
       let currentMsgCount = await crawler.getMessageCount(config);
 
@@ -122,6 +124,7 @@ async function runAgent(input: LeadInput, simulate = false) {
     issues,
     summary,
     actionableFix,
+    chatWidget,
     transcript,
     createdAt: new Date().toISOString(),
     status: 'audited'

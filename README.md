@@ -60,7 +60,7 @@ Tryda/
 ### 2. Backend API Workspace (`/backend`)
 * **Tech Stack**: Node.js Express, TypeScript, Zod validation, Firebase Admin SDK.
 * **Deployment**: Run as a containerized Docker container on **Google Cloud Run** in `us-central1` under the `july-push` Google Cloud project.
-* **Monetization**: Integrated with the **Stripe Billing API** to provision billing tiers, subscriptions ($10/mo to $100/mo), and portal sessions.
+* **Monetization**: Integrated with the **Stripe Billing API** to provision billing tiers, subscriptions ($15/mo to $85/mo), and portal sessions.
 
 ### 3. Tryda-Agent Workspace (`/agent`)
 * **Tech Stack**: Playwright (Lightweight headless Chromium configured in `/tmp` to optimize partition limits), `@google/generative-ai` SDK, `resend` client, `firebase-admin`.

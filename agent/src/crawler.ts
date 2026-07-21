@@ -22,6 +22,12 @@ const WIDGET_HEURISTICS: Record<string, ChatElementConfig> = {
     historySelector: '.intercom-conversation-body',
     messageSelector: '.intercom-comment-container, .intercom-post'
   },
+  tawkto: {
+    buttonSelector: 'iframe[src*="tawk.to"], iframe[title*="chat widget"], .tawk-min-container, #tawk-chat-iframe, [id*="tawk"]',
+    inputSelector: 'textarea[placeholder*="message" i], input[placeholder*="message" i], textarea, input',
+    historySelector: '.tawk-messages, [class*="tawk-messages"]',
+    messageSelector: '.tawk-card, [class*="tawk-card"], .tawk-message, [class*="tawk-message"]'
+  },
   generic: {
     buttonSelector: 'button:has-text("chat"), button:has-text("support"), [aria-label*="chat"], [class*="chat-launcher"], [id*="chat-button"], svg[class*="chat"]',
     inputSelector: 'textarea[placeholder*="message" i], input[placeholder*="message" i], textarea[placeholder*="ask" i], input[placeholder*="ask" i], [role="textbox"]',
@@ -33,6 +39,7 @@ const WIDGET_HEURISTICS: Record<string, ChatElementConfig> = {
 export class ChatCrawler {
   private browser: Browser | null = null;
   private page: Page | null = null;
+  public detectedWidget: string | null = null;
 
   async start(url: string) {
     this.browser = await chromium.launch({
@@ -54,12 +61,23 @@ export class ChatCrawler {
   async findChatWidget(): Promise<ChatElementConfig | null> {
     if (!this.page) throw new Error('Page not initialized. Call start() first.');
 
-    // 1. Check heuristics
+    // 1. Check JS API detection for tawkto first
+    try {
+      const hasTawkJS = await this.page.evaluate(() => typeof (window as any).Tawk_API !== 'undefined');
+      if (hasTawkJS) {
+        console.log('Detected active tawk.to JavaScript API.');
+        this.detectedWidget = 'tawkto';
+        return WIDGET_HEURISTICS.tawkto;
+      }
+    } catch {}
+
+    // 2. Check heuristics
     for (const [name, config] of Object.entries(WIDGET_HEURISTICS)) {
       try {
         const btn = await this.page.$(config.buttonSelector);
         if (btn && await btn.isVisible()) {
           console.log(`Detected likely ${name} chat widget.`);
+          this.detectedWidget = name;
           return config;
         }
       } catch (err) {
@@ -67,12 +85,13 @@ export class ChatCrawler {
       }
     }
 
-    // 2. Try generic search if specific ones failed
+    // 3. Try generic search if specific ones failed
     try {
       const generic = WIDGET_HEURISTICS.generic;
       const genericBtn = await this.page.$(generic.buttonSelector);
       if (genericBtn && await genericBtn.isVisible()) {
         console.log('Detected generic chat widget.');
+        this.detectedWidget = 'generic';
         return generic;
       }
     } catch (err) {
@@ -85,6 +104,19 @@ export class ChatCrawler {
   async openChat(config: ChatElementConfig) {
     if (!this.page) throw new Error('Page not initialized');
     console.log('Attempting to open chat widget...');
+
+    // Try opening via JavaScript API first for maximum reliability
+    try {
+      await this.page.evaluate(() => {
+        if (typeof (window as any).Tawk_API !== 'undefined' && typeof (window as any).Tawk_API.maximize === 'function') {
+          (window as any).Tawk_API.maximize();
+        }
+        if (typeof (window as any).$crisp !== 'undefined' && typeof (window as any).$crisp.push === 'function') {
+          (window as any).$crisp.push(["do", "chat:open"]);
+        }
+      });
+    } catch {}
+
     const btn = await this.page.$(config.buttonSelector);
     if (btn) {
       await btn.click();

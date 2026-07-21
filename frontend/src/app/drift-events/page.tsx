@@ -31,8 +31,8 @@ export default function DriftEventsPage() {
   return (
     <div className="flex min-h-screen">
       <Sidebar />
-      <main className="ml-56 flex-1 p-6 space-y-6">
-        <div className="flex items-center justify-between">
+      <main className="ml-0 lg:ml-56 pt-20 lg:pt-6 flex-1 p-6 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-xl font-semibold text-gray-100">Drift Events</h1>
             <p className="text-sm text-gray-500 mt-0.5">

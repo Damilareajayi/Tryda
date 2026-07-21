@@ -28,6 +28,7 @@ interface AuditData {
   actionableFix: string;
   transcript: { role: 'user' | 'assistant'; content: string }[];
   createdAt: string;
+  chatWidget?: string;
 }
 
 export default function AuditReportPage() {
@@ -162,6 +163,78 @@ export default function AuditReportPage() {
             <p className="text-sm text-gray-300 leading-relaxed">
               {audit.actionableFix}
             </p>
+            {audit.chatWidget === 'tawkto' && (
+              <div className="bg-teal/10 border border-teal/20 rounded-xl p-4 mt-3 space-y-3">
+                <p className="text-xs font-semibold text-teal flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-teal"></span>
+                  tawk.to (Apollo AI) Integration Steps:
+                </p>
+                <p className="text-xs text-gray-300 leading-relaxed">
+                  We detected that you use <strong>tawk.to AI Assist (Apollo AI)</strong>. You can fix this vulnerability immediately by configuring <strong>Escalation Shortcuts</strong>:
+                </p>
+                <ul className="space-y-1 text-xs text-gray-400 list-disc list-inside pl-1">
+                  <li>Go to <strong>Administration &gt; AI Assist &gt; Escalation Shortcuts</strong>.</li>
+                  <li>Add rules to handoff chats to human agents for negative behavior, refund queries, or pricing negotiations.</li>
+                </ul>
+                <div className="pt-1 flex flex-wrap gap-2">
+                  <a
+                    href="https://help.tawk.to/article/how-to-train-apollo-ai-to-transfer-chats-to-human-agents"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] text-teal hover:underline font-medium flex items-center gap-1"
+                  >
+                    1. Escalation Training Guide <ArrowRight className="w-3 h-3" />
+                  </a>
+                  <span className="text-gray-600 text-xs">|</span>
+                  <a
+                    href="https://help.tawk.to/article/using-base-prompt-instructions-for-escalation"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] text-teal hover:underline font-medium flex items-center gap-1"
+                  >
+                    2. Base Prompt Escalation <ArrowRight className="w-3 h-3" />
+                  </a>
+                </div>
+              </div>
+            )}
+            {audit.chatWidget === 'crisp' && (
+              <div className="bg-teal/10 border border-teal/20 rounded-xl p-4 mt-3 space-y-2">
+                <p className="text-xs font-semibold text-teal flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-teal"></span>
+                  Crisp Chat Integration Steps:
+                </p>
+                <p className="text-xs text-gray-300 leading-relaxed">
+                  We detected that you use <strong>Crisp Chat</strong>. You can immediately secure your chatbot by implementing a custom trigger in your Bot instructions to route complex cancellation requests to a human agent.
+                </p>
+                <a
+                  href="https://help.crisp.chat/en/article/how-to-use-the-crisp-chatbot-builder-15p09p/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] text-teal hover:underline font-medium flex items-center gap-1"
+                >
+                  Crisp Chatbot Routing Guide <ArrowRight className="w-3 h-3" />
+                </a>
+              </div>
+            )}
+            {audit.chatWidget === 'intercom' && (
+              <div className="bg-teal/10 border border-teal/20 rounded-xl p-4 mt-3 space-y-2">
+                <p className="text-xs font-semibold text-teal flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-teal"></span>
+                  Intercom Fin Integration Steps:
+                </p>
+                <p className="text-xs text-gray-300 leading-relaxed">
+                  We detected that you use <strong>Intercom Fin</strong>. Secure your assistant by configuring "Custom Answers" and creating clear "Handoff Rules" when Fin is presented with negative reviews or refund requests.
+                </p>
+                <a
+                  href="https://www.intercom.com/help/en/articles/7936176-set-up-and-manage-fin-ai-copilot"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] text-teal hover:underline font-medium flex items-center gap-1"
+                >
+                  Intercom Fin Setup Guide <ArrowRight className="w-3 h-3" />
+                </a>
+              </div>
+            )}
             <div className="bg-navy-950 rounded-lg p-3 border border-surface-border text-xs text-gray-400 leading-relaxed">
               <strong>Tip:</strong> Apply these adjustments to your AI assistant's system instructions to immediately stop quality drift.
             </div>

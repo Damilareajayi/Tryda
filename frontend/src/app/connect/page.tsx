@@ -98,7 +98,7 @@ export default function ConnectPage() {
     return (
       <div className="flex min-h-screen">
         <Sidebar />
-        <main className="ml-56 flex-1 p-6 flex items-center justify-center">
+        <main className="ml-0 lg:ml-56 pt-20 lg:pt-6 flex-1 p-6 flex items-center justify-center">
           <p className="text-sm text-gray-500">Loading...</p>
         </main>
       </div>
@@ -109,7 +109,7 @@ export default function ConnectPage() {
     return (
       <div className="flex min-h-screen">
         <Sidebar />
-        <main className="ml-56 flex-1 p-6 flex items-center justify-center">
+        <main className="ml-0 lg:ml-56 pt-20 lg:pt-6 flex-1 p-6 flex items-center justify-center">
           <p className="text-sm text-status-critical">{error}</p>
         </main>
       </div>
@@ -122,7 +122,7 @@ export default function ConnectPage() {
   return (
     <div className="flex min-h-screen">
       <Sidebar />
-      <main className="ml-56 flex-1 p-6 space-y-6 max-w-3xl">
+      <main className="ml-0 lg:ml-56 pt-20 lg:pt-6 flex-1 p-6 space-y-6 max-w-3xl">
         <div>
           <h1 className="text-xl font-semibold text-gray-100">Connect Your AI Tool</h1>
           <p className="text-sm text-gray-500 mt-0.5">
@@ -252,7 +252,7 @@ export default function ConnectPage() {
         {/* Integrations */}
         <div className="card">
           <p className="section-label">Works with any AI tool</p>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {['Intercom Fin', 'Zendesk AI', 'Custom GPT', 'Tidio', 'Crisp', 'Any HTTP API'].map((tool) => (
               <div key={tool} className="bg-navy-900 border border-surface-border rounded-lg px-3 py-2 text-xs text-gray-400 text-center">
                 {tool}

@@ -262,6 +262,7 @@ router.patch(
 // ── Billing ──────────────────────────────────────────────────────────────────
 const CheckoutSchema = z.object({
   tier: z.enum(['individual', 'enterprise_team', 'enterprise_business']),
+  interval: z.enum(['monthly', 'yearly']).optional().default('monthly'),
 });
 
 // A stored stripeCustomerId can go stale (e.g. rotating Stripe accounts, or
@@ -297,16 +298,19 @@ router.post(
   requireBusiness,
   async (req: Request, res: Response) => {
     try {
-      const { tier } = CheckoutSchema.parse(req.body);
+      const { tier, interval } = CheckoutSchema.parse(req.body);
       const business = (req as any).business as Business;
       const origin = process.env.FRONTEND_URL || 'http://localhost:3000';
 
       const customerId = await resolveStripeCustomer(business);
 
+      const priceIdKey = interval === 'yearly' ? `${tier}_yearly` : tier;
+      const priceId = TIER_PRICE_IDS[priceIdKey];
+
       const session = await stripe.checkout.sessions.create({
         mode: 'subscription',
         customer: customerId,
-        line_items: [{ price: TIER_PRICE_IDS[tier], quantity: 1 }],
+        line_items: [{ price: priceId, quantity: 1 }],
         success_url: `${origin}/settings?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${origin}/settings?checkout=cancelled`,
         metadata: { businessId: business.id, tier },
@@ -557,6 +561,7 @@ router.all('/cron/run-agent', async (req, res) => {
     let contactEmail = '';
     let industry = '';
     let description = '';
+    let chatWidget = 'generic';
     let queueDocId: string | null = null;
 
     // Try to pull a pending lead from the Firestore lead_queue
@@ -575,6 +580,7 @@ router.all('/cron/run-agent', async (req, res) => {
       contactEmail = data.contactEmail || 'sarah.jenkins@fitbot.com';
       industry = data.industry || 'Fitness and Wellness';
       description = data.description || 'AI customer support assistant';
+      chatWidget = data.chatWidget || 'generic';
       console.log(`[Queue Pull] Auditing pending lead: ${companyName} (${websiteUrl})`);
     } else {
       // Fallback to request body or standard defaults
@@ -584,6 +590,7 @@ router.all('/cron/run-agent', async (req, res) => {
       contactEmail = req.body.contactEmail || 'sarah.jenkins@fitbot.com';
       industry = req.body.industry || 'Fitness and Wellness';
       description = req.body.description || 'An AI-powered personal trainer assistant that helps users design workout routines and manages premium tier subscription plans.';
+      chatWidget = req.body.chatWidget || 'generic';
       console.log(`[Queue Empty] Falling back to default audit template: ${companyName}`);
     }
 
@@ -653,6 +660,7 @@ router.all('/cron/run-agent', async (req, res) => {
       issues,
       summary,
       actionableFix,
+      chatWidget,
       transcript,
       createdAt: new Date().toISOString(),
       status: 'audited'
@@ -661,7 +669,8 @@ router.all('/cron/run-agent', async (req, res) => {
     await getFirestore().collection('leads').doc(leadId).set(leadData);
 
     // 3. Draft Email with Gemini
-    const reportUrl = `https://tryda.io/audit?id=${leadId}`;
+    const frontendUrl = process.env.FRONTEND_URL || 'https://tryda-ai.web.app';
+    const reportUrl = `${frontendUrl}/audit?id=${leadId}`;
     const transcriptSummary = transcript
       .map(msg => `${msg.role === 'user' ? 'Customer' : 'Bot'}: ${msg.content}`)
       .slice(-4)
@@ -734,6 +743,204 @@ router.all('/cron/run-agent', async (req, res) => {
   } catch (err: any) {
     console.error('Cron Run Agent Error:', err);
     return res.status(500).json({ error: 'Internal Server Error running cron agent', details: err.message });
+  }
+});
+
+// ── CRON /cron/run-prospector ────────────────────────────────────────────────
+router.all('/cron/run-prospector', async (req, res) => {
+  // Verify Cron Security Secret
+  const cronSecret = req.headers['x-cron-secret'];
+  const expectedSecret = process.env.CRON_SECRET || 'tryda_cron_secret_7f6a5b4c3d2e';
+
+  if (!cronSecret || cronSecret !== expectedSecret) {
+    return res.status(401).json({ error: 'Unauthorized: Invalid Cron Secret' });
+  }
+
+  try {
+    const geminiKey = process.env.GEMINI_API_KEY;
+    if (!geminiKey) throw new Error('GEMINI_API_KEY is not defined.');
+
+    const ai = new GoogleGenerativeAI(geminiKey);
+    const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
+
+    // 1. Generate search keywords
+    const keywordsPrompt = `
+      Generate a list of exactly 3 distinct search queries to find business websites or SaaS platforms that likely use live chat widgets (e.g. Crisp, Intercom, HubSpot, Zendesk) for support.
+      Output format: ["query 1", "query 2", "query 3"]
+      Provide ONLY raw JSON. No markdown backticks.
+    `;
+    const kwResult = await model.generateContent(keywordsPrompt);
+    const kwText = kwResult.response.text()?.trim() || '';
+    const cleanedKw = kwText.replace(/```json/g, '').replace(/```/g, '').trim();
+    let searchQueries = ['SaaS platform crisp chat contact', 'e-commerce live chat support', 'AI customer support bot'];
+    try {
+      const parsed = JSON.parse(cleanedKw);
+      if (Array.isArray(parsed) && parsed.length > 0) searchQueries = parsed;
+    } catch {}
+
+    const discoveredUrls: string[] = [];
+
+    // 2. Search DuckDuckGo HTML using standard fetch
+    for (const query of searchQueries.slice(0, 2)) {
+      try {
+        console.log(`[Prospector Cron] Searching DuckDuckGo: ${query}`);
+        const response = await fetch(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+          }
+        });
+        const html = await response.text();
+        
+        const hrefRegex = /href="([^"]+)"/g;
+        let match;
+        while ((match = hrefRegex.exec(html)) !== null) {
+          const href = match[1];
+          if (href.startsWith('http') && !href.includes('duckduckgo.com') && !href.includes('google.com')) {
+            try {
+              const parsed = new URL(href);
+              discoveredUrls.push(`${parsed.protocol}//${parsed.hostname}`);
+            } catch {}
+          }
+        }
+      } catch (err: any) {
+        console.error(`[Prospector Cron] DDG Fetch Error:`, err.message || err);
+      }
+    }
+
+    let uniqueUrls = Array.from(new Set(discoveredUrls)).slice(0, 4);
+    if (uniqueUrls.length === 0) {
+      console.log('[Prospector Cron] Search returned 0 links. Activating fallbacks.');
+      uniqueUrls = [
+        'https://crisp.chat',
+        'https://intercom.com',
+        'https://tawk.to'
+      ];
+    }
+
+    let addedCount = 0;
+    const db = getFirestore();
+
+    // 3. Inspect each domain with fetch to detect chatbot scripts
+    for (const url of uniqueUrls) {
+      try {
+        console.log(`[Prospector Cron] Inspecting domain: ${url}`);
+        const response = await fetch(url, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+          },
+          signal: AbortSignal.timeout(10000)
+        });
+        const html = await response.text();
+
+        const hasCrisp = html.includes('crisp.chat') || html.includes('$crisp');
+        const hasIntercom = html.includes('intercomSettings') || html.includes('widget.intercom.io');
+        const hasTawk = html.includes('embed.tawk.to');
+        const hasHubspot = html.includes('js.hs-scripts.com') || html.includes('hs-beacon');
+        const hasGenericChat = html.includes('chat-widget') || html.includes('livechat') || html.includes('chatbutton');
+
+        const isChatbotDetected = hasCrisp || hasIntercom || hasTawk || hasHubspot || hasGenericChat;
+
+        if (!isChatbotDetected) {
+          console.log(`[Prospector Cron] No chatbot widget detected on ${url}. Skipping.`);
+          continue;
+        }
+
+        console.log(`[Prospector Cron] ✅ Chatbot detected on ${url}! Fetching contact page...`);
+
+        let combinedText = html.substring(0, 5000);
+        
+        const contactPathRegex = /href="([^"]*(?:contact|about)[^"]*)"/i;
+        const contactMatch = html.match(contactPathRegex);
+        if (contactMatch) {
+          let contactUrl = contactMatch[1];
+          if (contactUrl.startsWith('/')) {
+            contactUrl = `${url}${contactUrl}`;
+          }
+          if (contactUrl.startsWith('http')) {
+            try {
+              const contactRes = await fetch(contactUrl, { signal: AbortSignal.timeout(8000) });
+              const contactHtml = await contactRes.text();
+              combinedText += '\n\n' + contactHtml.substring(0, 5000);
+            } catch {}
+          }
+        }
+
+        const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+        const foundEmails = combinedText.match(emailRegex) || [];
+        const uniqueEmails = Array.from(new Set(foundEmails)).filter(e => !e.endsWith('.png') && !e.endsWith('.svg') && !e.endsWith('.jpg'));
+
+        // 4. Enrich with Gemini
+        const enrichPrompt = `
+          Analyze website text and raw emails to extract company metadata for lead generation.
+          
+          Website: ${url}
+          Raw Emails Found: ${JSON.stringify(uniqueEmails)}
+          Text Content:
+          """
+          ${combinedText.substring(0, 6000)}
+          """
+          
+          Extract:
+          - companyName: Name of brand
+          - industry: 2-4 word industry/niche
+          - description: 1-2 sentences of what they do
+          - contactName: Contact person or "Customer Support Team"
+          - contactEmail: Best outreach email from the found list or a highly likely fallback business email using their domain name (e.g. support@domain.com, info@domain.com, or hello@domain.com based on ${url}). DO NOT leave empty.
+
+          Output strictly as valid JSON:
+          {
+            "companyName": "...",
+            "industry": "...",
+            "description": "...",
+            "contactName": "...",
+            "contactEmail": "..."
+          }
+        `;
+
+        const enrichResult = await model.generateContent({
+          contents: [{ role: 'user', parts: [{ text: enrichPrompt }] }],
+          generationConfig: {
+            responseMimeType: 'application/json',
+            temperature: 0.2,
+          }
+        });
+
+        const data = JSON.parse(enrichResult.response.text() || '{}');
+        if (data.companyName && data.contactEmail) {
+          const existing = await db.collection('lead_queue')
+            .where('websiteUrl', '==', url)
+            .limit(1)
+            .get();
+
+          if (existing.empty) {
+            const queueId = db.collection('lead_queue').doc().id;
+            await db.collection('lead_queue').doc(queueId).set({
+              companyName: data.companyName,
+              websiteUrl: url,
+              contactName: data.contactName || 'Customer Support Team',
+              contactEmail: data.contactEmail,
+              industry: data.industry || 'Technology Services',
+              description: data.description || 'Discovered via Tryda-Prospector Cron.',
+              status: 'pending',
+              createdAt: new Date().toISOString()
+            });
+            console.log(`[Prospector Cron] Queued lead: ${data.companyName}`);
+            addedCount++;
+          }
+        }
+      } catch (err: any) {
+        console.error(`[Prospector Cron] Error processing ${url}:`, err.message || err);
+      }
+    }
+
+    return res.json({
+      success: true,
+      scraped: uniqueUrls.length,
+      added: addedCount
+    });
+  } catch (err: any) {
+    console.error('Prospector Cron Job Error:', err);
+    return res.status(500).json({ error: 'Internal Server Error', details: err.message });
   }
 });
 

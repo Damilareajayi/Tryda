@@ -130,6 +130,12 @@ export default function SigninPage() {
           Don&apos;t have an account?{' '}
           <Link href="/signup" className="text-teal hover:underline">Create one</Link>
         </p>
+
+        <div className="flex justify-center gap-4 text-xs text-gray-600 mt-8 border-t border-surface-border/50 pt-4">
+          <Link href="/terms" className="hover:text-gray-400 hover:underline">Terms of Service</Link>
+          <span>&middot;</span>
+          <Link href="/privacy" className="hover:text-gray-400 hover:underline">Privacy Policy</Link>
+        </div>
       </div>
       </div>
     </div>

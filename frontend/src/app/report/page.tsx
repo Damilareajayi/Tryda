@@ -32,7 +32,7 @@ export default function ReportPage() {
     return (
       <div className="flex min-h-screen">
         <Sidebar />
-        <main className="ml-56 flex-1 p-6 flex items-center justify-center">
+        <main className="ml-0 lg:ml-56 pt-20 lg:pt-6 flex-1 p-6 flex items-center justify-center">
           <p className="text-sm text-gray-500">Loading report...</p>
         </main>
       </div>
@@ -43,7 +43,7 @@ export default function ReportPage() {
     return (
       <div className="flex min-h-screen">
         <Sidebar />
-        <main className="ml-56 flex-1 p-6 flex items-center justify-center">
+        <main className="ml-0 lg:ml-56 pt-20 lg:pt-6 flex-1 p-6 flex items-center justify-center">
           <p className="text-sm text-status-critical">{error || 'No report available'}</p>
         </main>
       </div>
@@ -61,8 +61,8 @@ export default function ReportPage() {
   return (
     <div className="flex min-h-screen">
       <Sidebar />
-      <main className="ml-56 flex-1 p-6 space-y-6">
-        <div className="flex items-center justify-between">
+      <main className="ml-0 lg:ml-56 pt-20 lg:pt-6 flex-1 p-6 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-xl font-semibold text-gray-100">Performance Report</h1>
             <p className="text-sm text-gray-500 mt-0.5">
@@ -95,7 +95,7 @@ export default function ReportPage() {
         </div>
 
         {/* Stats grid */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             { label: 'Conversations', value: summary.totalConversations.toLocaleString() },
             { label: 'Avg Quality Score', value: `${summary.averageQualityScore}/100` },
