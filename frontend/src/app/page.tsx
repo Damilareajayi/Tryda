@@ -99,9 +99,9 @@ export default function LandingPage() {
       <section className="max-w-6xl mx-auto px-6 pt-20 pb-16">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div className="text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 bg-teal-glow border border-teal/20 rounded-full px-3 py-1 text-xs text-teal font-medium mb-6">
+            <div className="inline-flex items-center gap-2 bg-teal-glow border border-teal/20 rounded-full px-3.5 py-1 text-xs text-teal font-medium mb-6 shadow-sm">
               <span className="w-1.5 h-1.5 rounded-full bg-teal animate-pulse" />
-              Diagnostic AI for chatbots &amp; APIs
+              24/7 AI Reliability &amp; Drift Monitoring
             </div>
             <h1 className="text-4xl sm:text-5xl font-bold text-gray-100 tracking-tight leading-tight">
               Catch AI drift before<br />your customers do.
@@ -117,12 +117,12 @@ export default function LandingPage() {
           </div>
 
           <div className="relative flex justify-center lg:justify-end">
-            <div className="absolute w-80 h-80 sm:w-[28rem] sm:h-[28rem] bg-teal/15 rounded-full blur-[90px]" />
-            <Link href="/" className="relative">
+            <div className="absolute w-80 h-80 sm:w-[32rem] sm:h-[32rem] bg-teal/10 rounded-full blur-[100px]" />
+            <Link href="/" className="relative group block overflow-hidden rounded-2xl border border-surface-border/60 hover:border-teal/30 transition-all duration-300 shadow-teal-glow/10 shadow-2xl">
               <img
-                src="/brand/mascot/tryda-mascot-standing.png"
-                alt="Tryda mascot"
-                className="w-full max-w-xs sm:max-w-sm rounded-2xl border border-surface-border shadow-card animate-fade-in"
+                src="/brand/tryda-app-mockup.png"
+                alt="Tryda Dashboard Live Monitoring Mockup"
+                className="w-full max-w-lg rounded-2xl animate-fade-in group-hover:scale-[1.02] transition-transform duration-500"
               />
             </Link>
           </div>
