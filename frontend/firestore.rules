@@ -7,9 +7,9 @@ service cloud.firestore {
       allow write: if false; // Backends use Admin SDK (which bypasses security rules)
     }
 
-    // Default: Secure all other collections (require authentication)
+    // Default: Secure all other collections (deny all client-side read/write access as they are handled via backend API)
     match /{document=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if false;
     }
   }
 }

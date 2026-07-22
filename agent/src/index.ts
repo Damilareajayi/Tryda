@@ -155,15 +155,50 @@ async function runAgent(input: LeadInput, simulate = false) {
 
 // Default run if called directly
 if (require.main === module) {
-  const mockLead: LeadInput = {
-    companyName: 'FitBot AI',
-    websiteUrl: 'https://fitbot-fitness-demo.com',
-    contactName: 'Sarah Jenkins',
-    contactEmail: 'sarah.jenkins@fitbot.com',
-    industry: 'Fitness and Wellness',
-    description: 'An AI-powered personal trainer assistant that helps users design workout routines and manages premium tier subscription plans.'
-  };
+  async function runFromQueue() {
+    console.log('Querying Firestore lead_queue for pending prospects...');
+    const queueSnap = await db.collection('lead_queue')
+      .where('status', '==', 'pending')
+      .limit(1)
+      .get();
 
-  // Run in simulation mode as the demo site is offline
-  runAgent(mockLead, true).catch(console.error);
+    if (!queueSnap.empty) {
+      const doc = queueSnap.docs[0];
+      const data = doc.data();
+      console.log(`\n[Queue Pull] Processing pending lead: ${data.companyName} (${data.websiteUrl})`);
+      
+      const leadInput: LeadInput = {
+        companyName: data.companyName,
+        websiteUrl: data.websiteUrl,
+        contactName: data.contactName,
+        contactEmail: data.contactEmail,
+        industry: data.industry,
+        description: data.description,
+      };
+
+      try {
+        // Run real, live-site audit on their chatbot using Playwright crawler
+        await runAgent(leadInput, false);
+        
+        // Mark lead as completed in queue
+        await doc.ref.update({ status: 'completed' });
+        console.log(`[Queue Update] Lead ${data.companyName} marked as completed in queue.`);
+      } catch (err: any) {
+        console.error(`Error processing lead ${data.companyName}:`, err.message || err);
+      }
+    } else {
+      console.log('No pending leads found in lead_queue. Running simulation mock audit as fallback...');
+      const mockLead: LeadInput = {
+        companyName: 'FitBot AI',
+        websiteUrl: 'https://fitbot-fitness-demo.com',
+        contactName: 'Sarah Jenkins',
+        contactEmail: 'sarah.jenkins@fitbot.com',
+        industry: 'Fitness and Wellness',
+        description: 'An AI-powered personal trainer assistant that helps users design workout routines and manages premium tier subscription plans.'
+      };
+      await runAgent(mockLead, true).catch(console.error);
+    }
+  }
+
+  runFromQueue().catch(console.error);
 }

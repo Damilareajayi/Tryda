@@ -9,6 +9,9 @@ import { handleStripeWebhook } from './routes/stripeWebhook';
 const app = express();
 const PORT = process.env.PORT || 8080;
 
+// Trust reverse proxy headers (required for express-rate-limit on Cloud Run)
+app.set('trust proxy', 1);
+
 // Initialize Firebase
 initFirebase();
 

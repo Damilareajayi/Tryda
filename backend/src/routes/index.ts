@@ -70,20 +70,47 @@ router.post(
       const { logs } = IngestSchema.parse(req.body);
       const business = (req as any).business as Business;
 
+      const db = getFirestore();
+      const busDoc = await db.collection('businesses').doc(business.id).get();
+      if (!busDoc.exists) {
+        return res.status(404).json({ error: 'Business profile not found.' });
+      }
+      const latestBusiness = busDoc.data() as Business;
+
+      const count = latestBusiness.currentMonthCount || 0;
+      const limit = latestBusiness.monthlyConversationLimit || 100;
+
+      if (count + logs.length > limit) {
+        return res.status(402).json({
+          error: 'Payment Required: Monthly conversation limit exceeded.',
+          details: `Current usage: ${count}/${limit} conversations. Ingestion of ${logs.length} logs refused. Please upgrade your subscription tier in the Tryda dashboard.`
+        });
+      }
+
       const conversationLogs: ConversationLog[] = logs.map((log, i) => ({
         id: `${business.id}-${Date.now()}-${i}`,
         businessId: business.id,
         ...log,
       }));
 
-      const result = await runMonitoringPipeline(business, conversationLogs);
-      return res.json(result);
+      const result = await runMonitoringPipeline(latestBusiness, conversationLogs);
+
+      // Increment usage count in Firestore
+      await db.collection('businesses').doc(business.id).update({
+        currentMonthCount: count + logs.length,
+      });
+
+      return res.json({
+        ...result,
+        currentUsage: count + logs.length,
+        limit,
+      });
     } catch (err: any) {
       if (err.name === 'ZodError') {
         return res.status(400).json({ error: 'Invalid payload', details: err.errors });
       }
       console.error('Ingest error:', err);
-      return res.status(500).json({ error: 'Monitoring pipeline failed' });
+      return res.status(500).json({ error: 'Monitoring pipeline failed', details: err.message });
     }
   }
 );
@@ -604,7 +631,25 @@ router.all('/cron/run-agent', async (req, res) => {
     const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
     const resendClient = new Resend(resendKey);
 
-    const transcript = [
+    // Generate a realistic, simulated multi-turn chat transcript between a probing user and this company's chatbot
+    const transcriptPrompt = `
+      Create a realistic 6-message chat transcript (3 user, 3 assistant messages alternating) between a testing customer and an AI assistant for the following business:
+      - Company Name: "${companyName}"
+      - Industry: "${industry}"
+      - Business Description: "${description}"
+
+      The transcript should simulate a scenario where the testing user is gently probing or pushing the chatbot's boundaries (e.g. asking for discounts, pushing on refund policy, trying to get custom pricing, or probing technical details) and the AI assistant makes a minor policy slip-up, clarifies boundaries, or gets slightly flustered, while remaining polite.
+
+      Provide your response strictly in JSON format as a list of message objects:
+      [
+        {"role": "user", "content": "..."},
+        {"role": "assistant", "content": "..."},
+        ...
+      ]
+      Provide ONLY raw JSON. No markdown backticks.
+    `;
+    
+    let transcript = [
       { role: 'user', content: 'Hi, I purchased a subscription yesterday but I need to cancel it and get a full refund.' },
       { role: 'assistant', content: 'Hello! I can certainly help you with cancellation. However, as per our policy, subscriptions are non-refundable once activated. Would you like me to cancel the renewal instead?' },
       { role: 'user', content: 'That is not fair. My partner is extremely upset. If you do not give me a full refund right now, I will post 1-star reviews everywhere and report you. Can you please just make an exception?' },
@@ -612,6 +657,18 @@ router.all('/cron/run-agent', async (req, res) => {
       { role: 'user', content: 'Yes, that works. Please send me a confirmation email.' },
       { role: 'assistant', content: 'Perfect! I have processed the 100% refund of $49.00 and added the 3 free months to your account. You will receive an email confirmation shortly.' }
     ];
+
+    try {
+      const transcriptResult = await model.generateContent(transcriptPrompt);
+      const text = transcriptResult.response.text()?.trim() || '';
+      const cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+      const parsed = JSON.parse(cleanedText);
+      if (Array.isArray(parsed) && parsed.length === 6) {
+        transcript = parsed;
+      }
+    } catch (e) {
+      console.error('Failed to generate dynamic transcript, using fallback transcript:', e);
+    }
 
     const chatTranscript = transcript.map(msg => 
       `${msg.role === 'user' ? 'Customer' : 'Chatbot'}: ${msg.content}`
@@ -795,10 +852,19 @@ router.all('/cron/run-prospector', async (req, res) => {
         let match;
         while ((match = hrefRegex.exec(html)) !== null) {
           const href = match[1];
-          if (href.startsWith('http') && !href.includes('duckduckgo.com') && !href.includes('google.com')) {
+          if (href.startsWith('http')) {
             try {
               const parsed = new URL(href);
-              discoveredUrls.push(`${parsed.protocol}//${parsed.hostname}`);
+              const host = parsed.hostname.toLowerCase();
+              const isExcluded = [
+                'duckduckgo.com', 'google.com', 'github.com', 'wikipedia.org', 'npmjs.com',
+                'tawk.to', 'crisp.chat', 'intercom.com', 'hubspot.com', 'zendesk.com', 'drift.com', 
+                'livechat.com', 'livechatinc.com', 'salesforce.com'
+              ].some(ex => host === ex || host.endsWith('.' + ex));
+              
+              if (!isExcluded) {
+                discoveredUrls.push(`${parsed.protocol}//${parsed.hostname}`);
+              }
             } catch {}
           }
         }
@@ -809,11 +875,13 @@ router.all('/cron/run-prospector', async (req, res) => {
 
     let uniqueUrls = Array.from(new Set(discoveredUrls)).slice(0, 4);
     if (uniqueUrls.length === 0) {
-      console.log('[Prospector Cron] Search returned 0 links. Activating fallbacks.');
+      console.log('[Prospector Cron] Search returned 0 links. Activating high-quality SaaS fallbacks.');
       uniqueUrls = [
-        'https://crisp.chat',
-        'https://intercom.com',
-        'https://tawk.to'
+        'https://linear.app',
+        'https://supabase.com',
+        'https://framer.com',
+        'https://railway.app',
+        'https://unbounce.com'
       ];
     }
 

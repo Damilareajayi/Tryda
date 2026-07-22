@@ -4,8 +4,9 @@
 cd /home/ajayidamilarefelix/Tryda/agent
 
 # Load NVM (Node Version Manager) to ensure Node and npm are available in the cron environment
-export NVM_DIR="$HOME/.nvm"
+export NVM_DIR="/usr/local/nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+export PATH="/usr/local/nvm/versions/node/v24.16.0/bin:$PATH"
 
 # Set the required Playwright browser path and trigger the agent
 export PLAYWRIGHT_BROWSERS_PATH=/tmp/playwright-browsers
