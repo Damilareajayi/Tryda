@@ -72,12 +72,7 @@ const PLANS = [
 
 export default function LandingPage() {
   const { user, loading } = useAuth();
-  const router = useRouter();
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
-
-  useEffect(() => {
-    if (!loading && user) router.replace('/dashboard');
-  }, [loading, user, router]);
 
   return (
     <div className="min-h-screen">
@@ -89,8 +84,14 @@ export default function LandingPage() {
             <span className="font-bold text-lg text-white tracking-tight">Tryda</span>
           </Link>
           <div className="flex items-center gap-3">
-            <Link href="/signin" className="btn-ghost text-sm">Sign In</Link>
-            <Link href="/signup" className="btn-primary text-sm">Get Started</Link>
+            {!loading && user ? (
+              <Link href="/dashboard" className="btn-primary text-sm">Go to Dashboard</Link>
+            ) : (
+              <>
+                <Link href="/signin" className="btn-ghost text-sm">Sign In</Link>
+                <Link href="/signup" className="btn-primary text-sm">Get Started</Link>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -111,8 +112,14 @@ export default function LandingPage() {
               and tells you exactly what to fix when something goes wrong.
             </p>
             <div className="flex items-center justify-center lg:justify-start gap-3 mt-8">
-              <Link href="/signup" className="btn-primary text-sm px-6 py-3">Start monitoring free</Link>
-              <Link href="/signin" className="btn-ghost text-sm px-6 py-3 border border-surface-border">Sign In</Link>
+              {!loading && user ? (
+                <Link href="/dashboard" className="btn-primary text-sm px-6 py-3">Go to Dashboard</Link>
+              ) : (
+                <>
+                  <Link href="/signup" className="btn-primary text-sm px-6 py-3">Start monitoring free</Link>
+                  <Link href="/signin" className="btn-ghost text-sm px-6 py-3 border border-surface-border">Sign In</Link>
+                </>
+              )}
             </div>
           </div>
 
