@@ -62,7 +62,7 @@ export function Sidebar() {
     <>
       {/* Mobile Top Bar */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-navy-900 border-b border-surface-border flex items-center justify-between px-4 z-30">
-        <Link href="/dashboard" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2">
           <Logo size={24} />
           <span className="font-bold text-md text-white tracking-tight">Tryda</span>
         </Link>

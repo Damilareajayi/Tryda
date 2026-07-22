@@ -6,6 +6,8 @@ import { fetchBusiness, createCheckoutSession, createPortalSession, verifyChecko
 import { BusinessProfile, SubscriptionTier } from '@/types';
 import { useRequireAuth } from '@/lib/useRequireAuth';
 import { useAuth } from '@/lib/auth-context';
+import { updateProfile } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 
 const PLAN_LABELS: Record<SubscriptionTier, string> = {
   free: 'Free Plan',
@@ -60,13 +62,34 @@ function SettingsPageInner() {
   const [checkoutNotice, setCheckoutNotice] = useState<string | null>(null);
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
 
+  // New Profile States
+  const [displayName, setDisplayName] = useState('');
+  const [profileSaving, setProfileSaving] = useState(false);
+
   async function handleSignOut() {
     await signOut();
     router.push('/signin');
   }
 
+  async function handleUpdateProfile(e: React.FormEvent) {
+    e.preventDefault();
+    if (!auth.currentUser) return;
+    setProfileSaving(true);
+    try {
+      await updateProfile(auth.currentUser, {
+        displayName: displayName,
+      });
+      alert('Profile display name updated successfully!');
+    } catch (err: any) {
+      alert('Failed to update profile: ' + err.message);
+    } finally {
+      setProfileSaving(false);
+    }
+  }
+
   useEffect(() => {
     if (!user) return;
+    setDisplayName(user.displayName || '');
     async function load() {
       const sessionId = searchParams.get('session_id');
       const checkout = searchParams.get('checkout');
@@ -226,6 +249,35 @@ function SettingsPageInner() {
                   </div>
                 </div>
               )}
+            </div>
+
+            <div className="card space-y-4">
+              <p className="text-sm font-medium text-gray-200">User Profile Settings</p>
+              <form onSubmit={handleUpdateProfile} className="space-y-3">
+                <div className="space-y-1">
+                  <label htmlFor="displayName" className="text-xs text-gray-500 font-medium">Display Name</label>
+                  <input
+                    type="text"
+                    id="displayName"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    className="input h-10 py-1.5"
+                    placeholder="Enter your name"
+                  />
+                </div>
+                <div className="flex items-center justify-between pt-1">
+                  <div className="text-xs text-gray-500">
+                    Email Status: {user?.emailVerified ? <span className="text-status-healthy font-semibold">Verified</span> : <span className="text-status-warning font-semibold">Pending Verification</span>}
+                  </div>
+                  <button
+                    type="submit"
+                    className="btn-primary text-xs px-4 py-1.5 h-auto text-navy-950 font-semibold"
+                    disabled={profileSaving}
+                  >
+                    {profileSaving ? 'Saving...' : 'Save Profile'}
+                  </button>
+                </div>
+              </form>
             </div>
 
             <div className="card flex items-center justify-between">
